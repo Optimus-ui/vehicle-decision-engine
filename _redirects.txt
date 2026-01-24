@@ -1,0 +1,33 @@
+# ================================
+# Base engine routes (serve files)
+# ================================
+
+/new-car-gate            /new-car-gate.html          200
+/ev-gate                 /ev-gate.html               200
+/ev-funding-route        /ev-funding-route.html      200
+/pcp-decision            /pcp-decision.html          200
+/balloon-decision        /balloon-decision.html      200
+/sell-route              /sell-route.html            200
+
+
+# ==========================================
+# Outcome tracking (same file, unique paths)
+# ==========================================
+
+/new-car-gate/outcome/*      /new-car-gate.html      200
+/ev-gate/outcome/*           /ev-gate.html           200
+/ev-funding-route/outcome/*  /ev-funding-route.html  200
+/pcp-decision/outcome/*      /pcp-decision.html      200
+/balloon-decision/outcome/*  /balloon-decision.html  200
+
+
+# ================================
+# (Optional) Trailing slash guard
+# ================================
+
+/new-car-gate/            /new-car-gate              301
+/ev-gate/                 /ev-gate                   301
+/ev-funding-route/        /ev-funding-route          301
+/pcp-decision/            /pcp-decision              301
+/balloon-decision/        /balloon-decision          301
+/sell-route/              /sell-route                301

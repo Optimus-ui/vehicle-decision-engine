@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PCP Decision Engine</title>
+  <meta name="description" content="A conservative, rule-based check to decide whether to keep your PCP car, hand it back, change car, or pause and check one missing number." />
+
+  <!-- Google-safe: canonical always points to base; outcome paths are noindex -->
+  <link id="canonicalLink" rel="canonical" href="/pcp-decision/" />
+  <meta id="robotsMeta" name="robots" content="index,follow" />
+
+  <style>
+:root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>PCP Decision</h1>
+        <p class="sub">
+          A conservative, deterministic check. Same answers → same outcome.
+          No sales pressure. No quotes. Not financial advice.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Deterministic rules</div>
+        <div class="pill">Conservative bias</div>
+        <div class="pill">No “you should”</div>
+        <div class="pill">Outcome tracking</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card" id="formCard">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p>Answer each question as written. If you’re unsure, pick the more cautious option.</p>
+          </div>
+          <div class="tag" id="statusTag">Not run</div>
+        </div>
+        <div class="bd">
+          <form class="form" id="pcpForm">
+            <div class="section">
+              <h3>Where you are</h3>
+              <p>This sets context (end-of-term decisions differ from mid-term decisions).</p>
+            </div>
+
+            <label>
+              Where are you in the PCP?
+              <select id="stage" required>
+                <option value="end">0–3 months to end</option>
+                <option value="mid">More than 3 months left</option>
+              </select>
+            </label>
+
+            <div class="section">
+              <h3>Value vs balloon</h3>
+              <p>This is the key missing number for most people.</p>
+              <p class="tip"><b>Tip:</b> If you don’t know, the conservative answer is to pause and check.</p>
+            </div>
+
+            <label>
+              Is your car worth more or less than the balloon (GFV)?
+              <select id="equity" required>
+                <option value="not_sure">Not sure</option>
+                <option value="more">Worth more (positive equity)</option>
+                <option value="same">About the same</option>
+                <option value="less">Worth less (negative equity)</option>
+              </select>
+            </label>
+
+            <div class="section">
+              <h3>Fit and plan</h3>
+              <p>These questions are about whether the car still works for you and your realistic time horizon.</p>
+            </div>
+
+            <label>
+              Does the car still suit your needs?
+              <select id="fit" required>
+                <option value="yes">Yes</option>
+                <option value="mostly">Mostly</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+
+            <label>
+              If you kept it, how long would you realistically keep it?
+              <select id="horizon" required>
+                <option value="short">Under 2 years</option>
+                <option value="long">3+ years</option>
+              </select>
+            </label>
+
+            <label>
+              If your monthly cost rose meaningfully, how painful would that be?
+              <select id="stress" required>
+                <option value="painful">Very painful</option>
+                <option value="ok">Manageable</option>
+                <option value="fine">Not an issue</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="btnrow">
+            <button class="primary" id="btn" type="button">Get my outcome</button>
+            <button class="ghost" id="resetBtn" type="button">Reset</button>
+          </div>
+
+          <div class="note">
+            Decision support only — not financial advice. Check your agreement, mileage/condition rules, and settlement figures.
+          </div>
+        </div>
+      </section>
+
+      <!-- OUTPUT -->
+      <section class="card" id="resultCard" style="display:none;" aria-live="polite">
+        <div class="hd">
+          <div>
+            <h2>Outcome</h2>
+            <p>Clear result, with plain-English why + next steps.</p>
+          </div>
+          <div class="tag" id="pathTag">/pcp-decision</div>
+        </div>
+        <div class="bd">
+          <div id="resultBox" class="outcome"></div>
+
+          <div class="footer">
+            <div class="small">This page does not store answers. Outcome URLs are for tracking only.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+(() => {
+  // ---------------------------
+  // Paths (flat-file friendly)
+  // ---------------------------
+  const BASE_PATH = "/pcp-decision/";
+  const OUTCOME_PATH = "/pcp-decision/outcome/";
+
+  // ---------------------------
+  // Google-safe indexing directives
+  // ---------------------------
+  function applyIndexingDirectives() {
+    const canonicalEl = document.getElementById("canonicalLink");
+    const robotsEl = document.getElementById("robotsMeta");
+    const path = window.location.pathname || "";
+    const isOutcomePath = path.startsWith(OUTCOME_PATH);
+    if (canonicalEl) canonicalEl.setAttribute("href", BASE_PATH);
+    if (robotsEl) robotsEl.setAttribute("content", isOutcomePath ? "noindex,follow" : "index,follow");
+  }
+  applyIndexingDirectives();
+
+  // ---------------------------
+  // DOM
+  // ---------------------------
+  const elStage   = document.getElementById("stage");
+  const elEquity  = document.getElementById("equity");
+  const elFit     = document.getElementById("fit");
+  const elHorizon = document.getElementById("horizon");
+  const elStress  = document.getElementById("stress");
+
+  const elBtn     = document.getElementById("btn");
+  const elReset   = document.getElementById("resetBtn");
+
+  const elStatus  = document.getElementById("statusTag");
+  const elPathTag = document.getElementById("pathTag");
+
+  const elResultCard = document.getElementById("resultCard");
+  const elResultBox  = document.getElementById("resultBox");
+
+  function setStatus(t) { if (elStatus) elStatus.textContent = t; }
+  function setPath(p) { if (elPathTag) elPathTag.textContent = p; }
+
+  function toSlug(tag){
+    return String(tag || "unknown")
+      .toLowerCase()
+      .trim()
+      .replace(/\s+/g, "-")
+      .replace(/[^a-z0-9-]/g, "");
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function setOutcomePath(slug) {
+    const safe = String(slug || "pause").toLowerCase().replace(/[^a-z0-9-]/g, "");
+    history.replaceState({ outcome: safe }, "", OUTCOME_PATH + safe);
+    setPath(OUTCOME_PATH + safe);
+  }
+
+  function setBasePath() {
+    history.replaceState({}, "", BASE_PATH);
+    setPath(BASE_PATH.replace(/\/$/, ""));
+  }
+
+  // ---------------------------
+  // Original deterministic logic (unchanged)
+  // ---------------------------
+  const elStage   = document.getElementById("stage");
+    const elEquity  = document.getElementById("equity");
+    const elFit     = document.getElementById("fit");
+    const elHorizon = document.getElementById("horizon");
+    const elStress  = document.getElementById("stress");
+    const elBtn     = document.getElementById("btn");
+    const elResult  = document.getElementById("result");
+
+    function toSlug(tag){
+      return String(tag || "unknown")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-")
+        .replace(/[^a-z0-9-]/g, "");
+    }
+
+    function recommendPCP({ stage, equity, fit, horizon, stress }) {
+      // Missing key info
+      if (equity === "not_sure") {
+        return {
+          tag: "PAUSE",
+          title: "Pause and check one missing number",
+          why: [
+            "You can’t decide keep/exit confidently without knowing value vs balloon (and, if mid-term, settlement)."
+          ],
+          next: [
+            "Get a rough valuation and compare it to the balloon (GFV).",
+            stage === "mid" ? "If you’re mid-term, also get the settlement figure." : "Then rerun this in 60 seconds."
+          ],
+          follow: null
+        };
+      }
+
+      // Negative equity: at end-of-term, PCP walk-away is the default framing.
+      if (equity === "less") {
+        return {
+          tag: "HAND BACK",
+          title: "Hand it back (avoid buying the car above market value)",
+          why: [
+            "If the car is worth less than the balloon, paying/refinancing the balloon usually means buying above market value.",
+            "Even if you expect mileage/condition charges, those are often capped and still cheaper than locking in the whole value-vs-balloon gap."
+          ],
+          next: [
+            "Check mileage/condition rules to avoid surprises.",
+            "Start fresh rather than rolling shortfalls forward."
+          ],
+          follow: null
+        };
+      }
+
+      // Fit dominates: if it doesn't suit, switching is rational.
+      if (fit === "no") {
+        return {
+          tag: "CHANGE",
+          title: "Change car (needs > convenience)",
+          why: [
+            "If the car doesn’t fit your needs, keeping it is usually the wrong kind of ‘saving’.",
+            "The trap is hiding costs inside a new agreement."
+          ],
+          next: [
+            "Compare total cost, not just monthly.",
+            "Avoid ‘same payment’ deals that quietly extend the term."
+          ],
+          follow: {
+            href: "/sell-route",
+            label: "If you’re exiting, choose the least-bad way to sell →"
+          }
+        };
+      }
+
+      // KEEP: fits + long horizon + stress not extreme
+      if (horizon === "long" && stress !== "painful") {
+        return {
+          tag: "KEEP",
+          title: "Keep the car",
+          why: [
+            "If the car fits and you’ll keep it 3+ years, keeping often avoids unnecessary churn and depreciation resets."
+          ],
+          next: [
+            "Next: decide how to handle the balloon (pay cash vs refinance, or pause if a key number is missing)."
+          ],
+          follow: {
+            href: "/balloon-decision",
+            label: "If you’re keeping the car: decide how to handle the balloon →"
+          }
+        };
+      }
+
+      // Conservative default
+      return {
+        tag: "PAUSE",
+        title: "Pause — it isn’t a clean keep/exit picture yet",
+        why: [
+          "If the choice isn’t clear, forcing a new agreement is how people overpay under time pressure."
+        ],
+        next: [
+          "Recheck valuation vs balloon and your real 12–24 month plan.",
+          "Then rerun."
+        ],
+        follow: null
+      };
+    }
+
+    elBtn.addEventListener("click", () => {
+      const out = recommendPCP({
+        stage: elStage.value,
+        equity: elEquity.value,
+        fit: elFit.value,
+        horizon: elHorizon.value,
+        stress: elStress.value
+      });
+
+      // Outcome tracking for Cloudflare Analytics
+      history.replaceState({}, "", "/outcome/" + toSlug(out.tag));
+
+      elResult.style.display = "block";
+      elResult.innerHTML = `
+        <div class="tag">${out.tag}</div>
+        <h2>${out.title}</h2>
+
+        <strong>Why:</strong>
+        <ul>${(out.why || []).map(x => `<li>${x}</li>`).join("")}</ul>
+
+        <div class="divider"></div>
+
+        <strong>What to do next:</strong>
+        <ul>${(out.next || []).map(x => `<li>${x}</li>`).join("")}</ul>
+
+        ${out.follow ? `
+          <div class="divider"></div>
+          <strong>Next decision:</strong>
+          <p style="margin-top:8px;">
+            <a href="${out.follow.href}">${out.follow.label}</a>
+          </p>
+        ` : ""}
+
+        <p class="note">Decision support only — not financial advice.</p>
+      `;
+
+      elResult.scrollIntoView({behavior:"smooth", block:"start"});
+    });
+})();
+</script>
+</body>
+</html>

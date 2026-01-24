@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sell Route — If you’re exiting</title>
+  <meta name="description" content="If you’re exiting your PCP, choose the least-bad way to sell: dealer vs private." />
+  <style>
+:root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>Sell Route</h1>
+        <p class="sub">
+          If you’re exiting your PCP, this page helps you choose the least-bad selling route.
+          No pricing tools. No hype. Just the trade-offs.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Plain-English trade-offs</div>
+        <div class="pill">No sales pressure</div>
+        <div class="pill">Fast to read</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="hd">
+        <div>
+          <h2>Two routes</h2>
+          <p>This page assumes you’ve already decided not to keep the car.</p>
+        </div>
+        <div class="tag"><a href="/pcp-decision" style="text-decoration:underline; text-underline-offset:3px;">Back to PCP decision</a></div>
+      </div>
+
+      <div class="bd">
+        <div class="why">
+          <h4>Options</h4>
+          <ul>
+            <li><b>Sell to a dealer / car buying service:</b> fastest, simplest, usually lower price.</li>
+            <li><b>Sell privately:</b> more work, usually higher price.</li>
+          </ul>
+        </div>
+
+        <div class="next" style="margin-top:12px;">
+          <h4>Rule of thumb</h4>
+          <ul>
+            <li>If time, stress, or certainty matter most → dealer route.</li>
+            <li>If maximising cash matters and you can handle admin → private route.</li>
+          </ul>
+        </div>
+
+        <div class="footer">
+          <div class="small">Decision support only — not financial advice.</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

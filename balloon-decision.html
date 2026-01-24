@@ -1,0 +1,573 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Balloon Decision — Pay Cash vs Refinance</title>
+  <meta name="description" content="If you’re keeping the car, decide how to handle the balloon: pay cash, refinance, or pause. Conservative, deterministic, no cookies." />
+
+  <!-- Indexing controls -->
+  <link id="canonicalLink" rel="canonical" href="/balloon-decision/" />
+  <meta id="robotsMeta" name="robots" content="index,follow" />
+
+  <style>
+:root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>Balloon Decision</h1>
+        <p class="sub">
+          If you’re keeping the car, this helps you choose <b>pay cash</b>, <b>refinance</b>, or <b>pause</b>.
+          Conservative rules. No quotes. Not financial advice.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Deterministic rules</div>
+        <div class="pill">Conservative bias</div>
+        <div class="pill">No “you should”</div>
+        <div class="pill">Outcome tracking</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p>If you’re unsure, pick the cautious option.</p>
+          </div>
+          <div class="tag">Not run</div>
+        </div>
+        <div class="bd">
+          <div class="section" style="margin-bottom:12px;">
+            <h3>Scope</h3>
+            <p>This page assumes keeping the car is viable. It does not revisit “keep vs exit”.</p>
+            <p class="tip"><b>Back:</b> <a href="/pcp-decision" style="text-decoration:underline; text-underline-offset:3px;">PCP decision</a></p>
+          </div>
+
+          <form class="form" id="balloonForm">
+            <label>
+              Roughly, is the car worth more or less than the balloon (GFV)?
+              <select id="equity">
+                <option value="not_sure">Not sure</option>
+                <option value="more">Worth more</option>
+                <option value="same">About the same</option>
+                <option value="less">Worth less</option>
+              </select>
+            </label>
+
+            <label>
+              Could you pay the balloon with cash without wrecking your safety buffer?
+              <select id="cash">
+                <option value="not_sure">Not sure</option>
+                <option value="yes">Yes</option>
+                <option value="some">Some, but not all</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+
+            <label>
+              If you keep it, how long will you realistically keep it?
+              <select id="horizon">
+                <option value="lt2">Under 2 years</option>
+                <option value="3plus">3+ years</option>
+              </select>
+            </label>
+
+            <label>
+              Do you expect it to be reasonably reliable over that period?
+              <select id="reliability">
+                <option value="yes">Yes</option>
+                <option value="unsure">Not sure</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+
+            <label>
+              If your monthly cost ended up meaningfully higher, how would that feel?
+              <select id="stress">
+                <option value="painful">Very painful</option>
+                <option value="ok">Manageable</option>
+                <option value="fine">Not an issue</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="btnrow">
+            <button class="primary" id="btn" type="button">Get my outcome</button>
+          </div>
+
+          <div class="note">
+            This tool is intentionally conservative. It does not quote rates, compare lenders, or calculate payments.
+          </div>
+        </div>
+      </section>
+
+      <!-- OUTPUT -->
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Outcome</h2>
+            <p>Clear result, with plain-English why + next steps.</p>
+          </div>
+          <div class="tag" id="pathTag">/balloon-decision</div>
+        </div>
+        <div class="bd">
+          <div id="result" class="outcome" style="display:none;"></div>
+
+          <div class="footer" style="margin-top:12px;">
+            <div class="small">Decision support only — not financial advice. Check your agreement, figures, and fees.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+
+    (() => {
+      // ============================
+      // Indexing rules (Google testing)
+      // ============================
+      const BASE_PATH = "/balloon-decision/";
+      const OUTCOME_PREFIX = BASE_PATH + "outcome/";
+
+      const canonicalEl = document.getElementById("canonicalLink");
+      const robotsEl = document.getElementById("robotsMeta");
+
+      function applyIndexingRules() {
+        const path = window.location.pathname || "/";
+        const isOutcome = path.startsWith(OUTCOME_PREFIX);
+
+        // Canonical ALWAYS points to the base engine path (avoids duplicate content)
+        if (canonicalEl) canonicalEl.setAttribute("href", BASE_PATH);
+
+        // Base path indexable; outcome paths noindex
+        if (robotsEl) robotsEl.setAttribute("content", isOutcome ? "noindex,follow" : "index,follow");
+      }
+
+      // ============================
+      // Existing engine logic (unchanged except where required)
+      // ============================
+      const elEquity = document.getElementById("equity");
+      const elCash = document.getElementById("cash");
+      const elHorizon = document.getElementById("horizon");
+      const elReliability = document.getElementById("reliability");
+      const elStress = document.getElementById("stress");
+      const elBtn = document.getElementById("btn");
+      const elResult = document.getElementById("result");
+
+      function toSlug(tag){
+        return String(tag || "unknown")
+          .toLowerCase()
+          .trim()
+          .replace(/\s+/g, "-")
+          .replace(/[^a-z0-9-]/g, "");
+      }
+
+      const ALLOWED = ["PAUSE", "PAY CASH", "REFINANCE"];
+
+      function recommendBalloon({ equity, cash, horizon, reliability, stress }) {
+        if (equity === "not_sure") {
+          return {
+            tag: "PAUSE",
+            title: "Pause — get value vs balloon first",
+            why: [
+              "You can’t choose cash vs refinance without knowing whether you’re buying above or below market value."
+            ],
+            next: [
+              "Get 1–2 rough valuations.",
+              "Compare them to your balloon (GFV).",
+              "Then rerun this page."
+            ],
+            action: { label: "Get a rough valuation →", url: "https://www.autotrader.co.uk/car-valuation" },
+            warn: "Refinancing blind is how people finance a loss."
+          };
+        }
+
+        // Negative equity: this page does not tell them to sell/exit, but it must stop them committing.
+        if (equity === "less") {
+          return {
+            tag: "PAUSE",
+            title: "Pause — negative equity changes the framing",
+            why: [
+              "If the car is worth less than the balloon, paying or refinancing often means buying above market value.",
+              "Even if you expect mileage/condition charges, those costs are often capped and can still be lower than locking in the full value-vs-balloon gap."
+            ],
+            next: [
+              "Compare: likely return charges (mileage/condition) vs the value-vs-balloon gap.",
+              "If the gap is large, revisit the main PCP decision page and re-check exit options."
+            ],
+            warn: "Be wary of anyone who ‘solves’ the gap by hiding it in a new agreement."
+          };
+        }
+
+        if (cash === "not_sure") {
+          return {
+            tag: "PAUSE",
+            title: "Pause — decide whether cash is genuinely available",
+            why: [
+              "If paying cash would damage your safety buffer, it isn’t really ‘available’."
+            ],
+            next: [
+              "Decide your minimum safe cash buffer.",
+              "Then answer again: can you pay the balloon and still keep that buffer?"
+            ],
+            warn: ""
+          };
+        }
+
+        const short = (horizon === "lt2");
+        const long = (horizon === "3plus");
+
+        if (short) {
+          return {
+            tag: "PAUSE",
+            title: "Pause — short horizons make balloon commitments risky",
+            why: [
+              "If you expect to move on within ~2 years, refinancing often becomes interest for nothing.",
+              "Even paying cash can be premature if you’re not truly keeping the car."
+            ],
+            next: [
+              "Confirm you genuinely want to keep the car (not just avoid a deadline).",
+              "If you do, rerun this with a 3+ year horizon."
+            ],
+            warn: "Refinancing ‘just for now’ is usually a bad idea."
+          };
+        }
+
+        if (reliability === "no") {
+          return {
+            tag: "PAUSE",
+            title: "Pause — don’t lock in finance on a car you don’t trust",
+            why: [
+              "Refinancing increases the chance you pay interest and repair bills at the same time."
+            ],
+            next: [
+              "If you still want to keep it, cash (with a buffer) is usually safer than finance.",
+              "If that doesn’t sit right, revisit the main PCP decision."
+            ],
+            warn: ""
+          };
+        }
+
+        if (stress === "painful") {
+          if (cash === "yes") {
+            return {
+              tag: "PAY CASH",
+              title: "Pay cash — avoid a higher fixed monthly commitment",
+              why: [
+                "You said higher monthlies would be very painful, so refinancing is the wrong type of commitment.",
+                "If cash is genuinely available without harming your buffer, cash avoids interest and monthly stress."
+              ],
+              next: [
+                "Confirm the exact balloon and any fees.",
+                "Keep your safety buffer intact after paying.",
+                "Reassess in 6–12 months."
+              ],
+              warn: "If paying cash would damage your buffer, treat that as ‘not available’ and pause."
+            };
+          }
+          return {
+            tag: "PAUSE",
+            title: "Pause — refinancing adds stress and cash isn’t available",
+            why: [
+              "Forcing a finance commitment here is high regret risk."
+            ],
+            next: [
+              "Get clearer quotes/fees, then rerun.",
+              "If stress remains, revisit the main PCP decision."
+            ],
+            warn: "Stretching terms just to hit a monthly number is often a bad idea."
+          };
+        }
+
+        if (cash === "yes" && long) {
+          return {
+            tag: "PAY CASH",
+            title: "Pay cash and keep the car (avoid interest)",
+            why: [
+              "If you’ll keep it 3+ years, cash often avoids paying interest on the balloon.",
+              "You keep control: you can sell later on your terms if circumstances change."
+            ],
+            next: [
+              "Confirm the exact balloon and any admin/option-to-purchase fee.",
+              "Keep a safety buffer after paying.",
+              "Reassess in 6–12 months."
+            ],
+            warn: ""
+          };
+        }
+
+        if ((cash === "some" || cash === "no") && long) {
+          return {
+            tag: "REFINANCE",
+            title: "Refinance and keep (only if the term matches your horizon)",
+            why: [
+              "If cash isn’t available, refinancing is the ownership route.",
+              "It’s usually rational only if you’ll keep the car long enough and it’s reasonably reliable."
+            ],
+            next: [
+              "Get 2–3 quotes.",
+              "Keep the term aligned to your real horizon (don’t over-extend just for monthly).",
+              "Compare total payable, not just monthly."
+            ],
+            warn: "Refinancing then selling soon is how people pay interest for nothing."
+          };
+        }
+
+        return {
+          tag: "PAUSE",
+          title: "Pause — it isn’t a clean cash vs refinance picture yet",
+          why: [
+            "If it isn’t clear, forcing finance is how people overpay under time pressure."
+          ],
+          next: [
+            "Sanity-check buffer (cash), horizon, and 2–3 quotes.",
+            "Then rerun."
+          ],
+          warn: ""
+        };
+      }
+
+      function slugToTag(slug) {
+        const s = String(slug || "").toLowerCase().trim();
+        if (s === "pause") return "PAUSE";
+        if (s === "pay-cash") return "PAY CASH";
+        if (s === "refinance") return "REFINANCE";
+        return "OUTCOME";
+      }
+
+      function renderOutcomeShellFromUrl() {
+        const path = window.location.pathname || "/";
+        if (!path.startsWith(OUTCOME_PREFIX)) return;
+
+        const slug = path.slice(OUTCOME_PREFIX.length).split("/")[0] || "";
+        const tag = slugToTag(slug);
+
+        // Outcome shell: renders on direct load for analytics paths.
+        // (Does not infer full rationale; user must rerun to regenerate logic-driven content.)
+        elResult.style.display = "block";
+        elResult.innerHTML = `
+          <div class="tag">${tag}</div>
+          <h2>Outcome path</h2>
+
+          <strong>Why:</strong>
+          <ul>
+            <li>This URL exists for analytics and sharing a stable outcome path.</li>
+            <li>To see the full rationale, rerun the questions on this page.</li>
+          </ul>
+
+          <div class="divider"></div>
+
+          <strong>What to do next:</strong>
+          <ul>
+            <li>Select your answers above.</li>
+            <li>Click “Get my outcome”.</li>
+          </ul>
+
+          <p class="note">Decision support only — not financial advice.</p>
+        `;
+      }
+
+      elBtn.addEventListener("click", () => {
+        const out = recommendBalloon({
+          equity: elEquity.value,
+          cash: elCash.value,
+          horizon: elHorizon.value,
+          reliability: elReliability.value,
+          stress: elStress.value
+        });
+
+        // Enforce locked outcome set
+        if (!ALLOWED.includes(out.tag)) {
+          out.tag = "PAUSE";
+          out.title = "Pause — internal mismatch (safe fallback)";
+          out.why = ["The engine hit an internal mismatch. Safe fallback."];
+          out.next = ["Refresh and try again."];
+          out.warn = "";
+          delete out.action;
+        }
+
+        // Outcome tracking for Cloudflare Analytics (unchanged)
+        history.replaceState({}, "", OUTCOME_PREFIX + toSlug(out.tag));
+
+        // Apply indexing rules after navigation (required)
+        applyIndexingRules();
+
+        elResult.style.display = "block";
+        elResult.innerHTML = `
+          <div class="tag">${out.tag}</div>
+          <h2>${out.title}</h2>
+
+          <strong>Why:</strong>
+          <ul>${(out.why || []).map(x => `<li>${x}</li>`).join("")}</ul>
+
+          <div class="divider"></div>
+
+          <strong>What to do next:</strong>
+          <ul>${(out.next || []).map(x => `<li>${x}</li>`).join("")}</ul>
+
+          ${out.action ? `
+            <p>
+              <a class="cta" href="${out.action.url}" target="_blank" rel="noopener noreferrer">
+                ${out.action.label}
+              </a>
+            </p>
+          ` : ""}
+
+          ${out.warn ? `
+            <div class="divider"></div>
+            <strong>Watch out:</strong>
+            <ul><li>${out.warn}</li></ul>
+          ` : ""}
+
+          <p class="note">Decision support only — not financial advice.</p>
+        `;
+
+        elResult.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+
+      // Run on load
+      applyIndexingRules();
+      renderOutcomeShellFromUrl();
+    })();
+  
+</script>
+</body>
+</html>

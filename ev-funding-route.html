@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EV Funding Route Gate</title>
+  <meta name="description" content="A conservative, rule-based check for which EV funding routes are compatible with your constraints. Deterministic. No cookies. Not advice." />
+
+  <!-- Google-safe: canonical always points to base; outcome paths are noindex -->
+  <link id="canonicalLink" rel="canonical" href="/ev-funding-route/" />
+  <meta id="robotsMeta" name="robots" content="index,follow" />
+
+  <style>
+:root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+
+/* EV Funding Route extras (token-based, New Car Gate pattern) */
+.routes{display:grid; gap:12px; grid-template-columns:1fr;}
+.routeCard{
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:12px;
+  background:rgba(0,0,0,.10);
+}
+.routeTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:8px;}
+.routeName{font-weight:650; font-size:14px; letter-spacing:-.01em;}
+.pill.ok{background:var(--good);}
+.pill.pause{background:var(--warn);}
+.pill.no{background:var(--bad);}
+
+
+.linkish{color:inherit}
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>EV Funding Route Gate</h1>
+        <p class="sub">
+          A conservative, deterministic filter for which funding routes are <b>structurally compatible</b> with your constraints.
+          No ranking. No quotes. No “you should”.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Deterministic rules</div>
+        <div class="pill">Conservative bias</div>
+        <div class="pill">No “you should”</div>
+        <div class="pill">Outcome tracking</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card" id="formCard">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p>Answer each question as written. If you’re unsure, pick the more cautious option.</p>
+          </div>
+          <div class="tag" id="statusTag">Not run</div>
+        </div>
+        <div class="bd">
+
+          <div class="section" style="margin-bottom:12px;">
+            <h3>Prerequisite</h3>
+            <p>This gate assumes charging viability has already been checked.</p>
+            <p class="tip"><b>If you haven’t checked yet:</b> use the <a href="/ev-gate/" style="text-decoration:underline; text-underline-offset:3px;">EV Viability Gate</a> first.</p>
+          </div>
+
+          <form class="form" id="fundForm">
+            <label>
+              Salary Sacrifice access (through your employer)
+              <select id="salSac">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="not_sure">Not sure</option>
+              </select>
+            </label>
+
+            <label>
+              Need the ability to exit/change the car early without heavy friction?
+              <select id="earlyExit">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="not_sure">Not sure</option>
+              </select>
+            </label>
+
+            <label>
+              Income stability (next ~12 months)
+              <select id="incomeStability">
+                <option value="stable">Stable</option>
+                <option value="uncertain">Uncertain / changing</option>
+                <option value="prefer_not">Prefer not to say</option>
+              </select>
+            </label>
+
+            <label>
+              Want to keep the car long-term (beyond ~4 years)?
+              <select id="horizon">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="not_sure">Not sure</option>
+              </select>
+            </label>
+
+            <label>
+              Prefer costs bundled into one predictable monthly amount?
+              <select id="bundled">
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+                <option value="not_sure">Not sure</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="btnrow">
+            <button class="primary" id="btn" type="button">Get my outcome</button>
+            <button class="ghost" id="resetBtn" type="button" style="display:none;">Reset</button>
+          </div>
+
+          <div class="note">
+            This tool filters routes by structural fit (eligibility, flexibility needs, stability, and preference for bundling).
+            It does not assess affordability or “best value”.
+          </div>
+        </div>
+      </section>
+
+      <!-- OUTPUT -->
+      <section class="card" id="resultCard" style="display:none;" aria-live="polite">
+        <div class="hd">
+          <div>
+            <h2>Outcome</h2>
+            <p>Clear result, with plain-English why + next steps.</p>
+          </div>
+          <div class="tag"><span class="linkish" id="startOver" style="cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Start over</span></div>
+        </div>
+        <div class="bd">
+          <div id="resultBox" class="outcome"></div>
+
+          <div class="divider" style="height:1px; background:var(--line); margin:14px 0;"></div>
+
+          <div class="tag">Route compatibility</div>
+          <div id="routesBox" class="routes" style="display:grid; gap:12px; grid-template-columns:1fr;"></div>
+
+          <div class="divider" style="height:1px; background:var(--line); margin:14px 0;"></div>
+
+          <div class="tag">Your answers (not stored)</div>
+          <div class="auditgrid" id="summaryKV" style="grid-template-columns:1fr; margin-top:10px;">
+            <div class="kv"><b>Salary Sacrifice access</b><br><span id="sumSal">—</span></div>
+            <div class="kv"><b>Need early exit flexibility</b><br><span id="sumExit">—</span></div>
+            <div class="kv"><b>Income stability</b><br><span id="sumIncome">—</span></div>
+            <div class="kv"><b>Keep car long-term</b><br><span id="sumHorizon">—</span></div>
+            <div class="kv"><b>Prefer bundled monthly amount</b><br><span id="sumBundled">—</span></div>
+          </div>
+
+          <div class="footer">
+            <div class="small">This page does not store answers. If you loaded an outcome URL directly, the outcome copy is shown without reconstructing inputs.</div>
+            <div class="small">Decision support only — not advice.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+
+    (function () {
+      // ---------------------------
+      // Engine paths (change here if you rename folder)
+      // ---------------------------
+      const BASE_PATH = "/ev-funding-route/";
+      const OUTCOME_PATH = "/ev-funding-route/outcome/";
+
+      // ---------------------------
+      // Google-safe indexing directives
+      // ---------------------------
+      function applyIndexingDirectives() {
+        const canonicalEl = document.getElementById("canonicalLink");
+        const robotsEl = document.getElementById("robotsMeta");
+
+        const path = window.location.pathname || "";
+        const isOutcomePath = path.startsWith(OUTCOME_PATH);
+
+        if (canonicalEl) canonicalEl.setAttribute("href", BASE_PATH);
+        if (robotsEl) robotsEl.setAttribute("content", isOutcomePath ? "noindex,follow" : "index,follow");
+      }
+      applyIndexingDirectives();
+
+      // ---------------------------
+      // Locked outcome set (cluster-consistent)
+      // ---------------------------
+      const OUTCOMES = {
+        VIABLE: { key: "VIABLE", slug: "viable", label: "VIABLE" },
+        PAUSE: { key: "PAUSE", slug: "pause", label: "PAUSE" },
+        NOT_VIABLE_FOR_NOW: { key: "NOT_VIABLE_FOR_NOW", slug: "not-viable-for-now", label: "NOT VIABLE (FOR NOW)" }
+      };
+
+      // ---------------------------
+      // DOM
+      // ---------------------------
+      const elSal = document.getElementById("salSac");
+      const elExit = document.getElementById("earlyExit");
+      const elIncome = document.getElementById("incomeStability");
+      const elHorizon = document.getElementById("horizon");
+      const elBundled = document.getElementById("bundled");
+
+      const elBtn = document.getElementById("btn");
+      const elFormCard = document.getElementById("formCard");
+      const elResultCard = document.getElementById("resultCard");
+      const elResultBox = document.getElementById("resultBox");
+      const elRoutesBox = document.getElementById("routesBox");
+      const elStartOver = document.getElementById("startOver");
+
+      const elSumSal = document.getElementById("sumSal");
+      const elSumExit = document.getElementById("sumExit");
+      const elSumIncome = document.getElementById("sumIncome");
+      const elSumHorizon = document.getElementById("sumHorizon");
+      const elSumBundled = document.getElementById("sumBundled");
+
+      // ---------------------------
+      // Helpers
+      // ---------------------------
+      function escapeHtml(str) {
+        return String(str)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function setOutcomePath(slug) {
+        const safe = String(slug || OUTCOMES.PAUSE.slug).toLowerCase().replace(/[^a-z0-9-]/g, "");
+        history.replaceState({ outcome: safe }, "", OUTCOME_PATH + safe);
+      }
+
+      function setBasePath() {
+        history.replaceState({}, "", BASE_PATH);
+      }
+
+      function parseOutcomeFromPath() {
+        const p = window.location.pathname || "";
+        const idx = p.indexOf(OUTCOME_PATH);
+        if (idx === -1) return null;
+        const slug = p.slice(idx + OUTCOME_PATH.length).split("/")[0].toLowerCase();
+        return Object.values(OUTCOMES).find(o => o.slug === slug) || null;
+      }
+
+      function labelSal(v) {
+        if (v === "yes") return "Yes";
+        if (v === "no") return "No";
+        if (v === "not_sure") return "Not sure";
+        return "—";
+      }
+      function labelExit(v) {
+        if (v === "yes") return "Yes";
+        if (v === "no") return "No";
+        if (v === "not_sure") return "Not sure";
+        return "—";
+      }
+      function labelIncome(v) {
+        if (v === "stable") return "Stable";
+        if (v === "uncertain") return "Uncertain / changing";
+        if (v === "prefer_not") return "Prefer not to say";
+        return "—";
+      }
+      function labelHorizon(v) {
+        if (v === "yes") return "Yes (beyond ~4 years)";
+        if (v === "no") return "No";
+        if (v === "not_sure") return "Not sure";
+        return "—";
+      }
+      function labelBundled(v) {
+        if (v === "yes") return "Yes";
+        if (v === "no") return "No";
+        if (v === "not_sure") return "Not sure";
+        return "—";
+      }
+
+      // Route status values
+      const ROUTE_STATUS = {
+        OK: "POTENTIALLY COMPATIBLE",
+        PAUSE: "PAUSE TO CHECK",
+        NO: "LIKELY NOT A FIT (FOR NOW)"
+      };
+
+      function routeCard(name, status, bullets) {
+        const cls = status === ROUTE_STATUS.OK ? "ok" : (status === ROUTE_STATUS.PAUSE ? "pause" : "no");
+        return `
+          <div class="routeCard">
+            <div class="routeTop">
+              <div class="routeName">${escapeHtml(name)}</div>
+              <div class="pill ${cls}">${escapeHtml(status)}</div>
+            </div>
+            <ul>${(bullets || []).map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+          </div>
+        `;
+      }
+
+      // ---------------------------
+      // Deterministic rules (conservative, no ranking)
+      // ---------------------------
+      function evaluateRoutes({ salSac, earlyExit, incomeStability, horizon, bundled }) {
+        const routes = {
+          buy: { name: "Buy (cash / outright)", status: ROUTE_STATUS.OK, why: [] },
+          finance: { name: "Finance (PCP / HP / loan)", status: ROUTE_STATUS.OK, why: [] },
+          lease: { name: "Lease", status: ROUTE_STATUS.OK, why: [] },
+          salsac: { name: "Salary Sacrifice (if available)", status: ROUTE_STATUS.OK, why: [] }
+        };
+
+        // Salary Sacrifice eligibility gate
+        if (salSac === "no") {
+          routes.salsac.status = ROUTE_STATUS.NO;
+          routes.salsac.why.push("Not available via your employer (based on your answer).");
+        } else if (salSac === "not_sure") {
+          routes.salsac.status = ROUTE_STATUS.PAUSE;
+          routes.salsac.why.push("Availability/eligibility is unconfirmed.");
+        } else {
+          routes.salsac.why.push("Availability appears confirmed (based on your answer).");
+        }
+
+        // Early-exit need: conservative filter for fixed-term routes
+        if (earlyExit === "not_sure") {
+          // Uncertainty here is a common regret driver => pause those routes that can be painful to exit
+          routes.lease.status = ROUTE_STATUS.PAUSE;
+          routes.lease.why.push("Early-exit needs are unclear; fixed-term commitments can be hard to change.");
+          routes.finance.status = ROUTE_STATUS.PAUSE;
+          routes.finance.why.push("Early-exit needs are unclear; finance agreements can be costly to unwind.");
+          if (routes.salsac.status === ROUTE_STATUS.OK) {
+            routes.salsac.status = ROUTE_STATUS.PAUSE;
+            routes.salsac.why.push("Early-exit needs are unclear; employer schemes can have constraints.");
+          }
+        } else if (earlyExit === "yes") {
+          routes.lease.status = ROUTE_STATUS.NO;
+          routes.lease.why.push("You indicated you need easy early exit; leases are typically inflexible once agreed.");
+          routes.finance.status = ROUTE_STATUS.PAUSE;
+          routes.finance.why.push("Early exit can be possible but terms matter; treat as a check rather than an assumption.");
+          if (routes.salsac.status === ROUTE_STATUS.OK) {
+            routes.salsac.status = ROUTE_STATUS.PAUSE;
+            routes.salsac.why.push("Early exit can have scheme-specific constraints; confirm policy before relying on it.");
+          }
+        } else {
+          // earlyExit === "no"
+          routes.lease.why.push("You indicated early exit is not a requirement.");
+          routes.finance.why.push("You indicated early exit is not a requirement.");
+          if (routes.salsac.status !== ROUTE_STATUS.NO) routes.salsac.why.push("You indicated early exit is not a requirement.");
+        }
+
+        // Income stability: conservative caution on long commitments (no affordability judgement)
+        if (incomeStability === "uncertain" || incomeStability === "prefer_not") {
+          // Do not block outright purchase purely on this; just caution on commitments
+          if (routes.lease.status === ROUTE_STATUS.OK) routes.lease.status = ROUTE_STATUS.PAUSE;
+          routes.lease.why.push("Income stability is uncertain/unknown; long commitments can become restrictive.");
+
+          if (routes.finance.status === ROUTE_STATUS.OK) routes.finance.status = ROUTE_STATUS.PAUSE;
+          routes.finance.why.push("Income stability is uncertain/unknown; treat long commitments conservatively.");
+
+          if (routes.salsac.status === ROUTE_STATUS.OK) routes.salsac.status = ROUTE_STATUS.PAUSE;
+          if (routes.salsac.status !== ROUTE_STATUS.NO) routes.salsac.why.push("Income stability is uncertain/unknown; scheme commitments and payroll changes matter.");
+        } else {
+          routes.buy.why.push("Income stability appears stable (based on your answer).");
+        }
+
+        // Ownership horizon: align route suitability (no “best”, just fit)
+        if (horizon === "not_sure") {
+          // Unclear horizon => pause routes where mismatch causes regret
+          if (routes.lease.status === ROUTE_STATUS.OK) routes.lease.status = ROUTE_STATUS.PAUSE;
+          routes.lease.why.push("Ownership horizon is unclear; fixed terms can be a mismatch.");
+
+          if (routes.finance.status === ROUTE_STATUS.OK) routes.finance.status = ROUTE_STATUS.PAUSE;
+          routes.finance.why.push("Ownership horizon is unclear; decide whether you want to keep or rotate before committing.");
+
+          routes.buy.status = ROUTE_STATUS.PAUSE;
+          routes.buy.why.push("Ownership horizon is unclear; outright ownership is simplest when long-term intent is clear.");
+        } else if (horizon === "yes") {
+          // Long-term keeper: leasing tends to mismatch intent (not always “wrong”, but flag fit)
+          routes.buy.why.push("Long-term keeping aligns structurally with ownership.");
+          if (routes.finance.status !== ROUTE_STATUS.NO) routes.finance.why.push("Long-term keeping can align, but end-of-term assumptions matter.");
+          if (routes.lease.status === ROUTE_STATUS.OK) routes.lease.status = ROUTE_STATUS.PAUSE;
+          routes.lease.why.push("Long-term keeping preference can conflict with repeated fixed-term usage.");
+        } else {
+          // horizon === "no" (not keeping long-term)
+          if (routes.buy.status === ROUTE_STATUS.OK) routes.buy.status = ROUTE_STATUS.PAUSE;
+          routes.buy.why.push("Not keeping long-term can make outright ownership less aligned unless resale handling is clearly acceptable.");
+          routes.lease.why.push("Not keeping long-term can align with fixed-term usage if constraints are understood.");
+          routes.finance.why.push("Not keeping long-term can align, but terms and end-of-term options matter.");
+        }
+
+        // Bundling preference: mark routes that commonly require more separate management (no cost claims)
+        if (bundled === "not_sure") {
+          // No need to block; just avoid pretending bundling is solved
+          routes.buy.why.push("Bundling preference is unclear.");
+          routes.finance.why.push("Bundling preference is unclear.");
+          routes.lease.why.push("Bundling preference is unclear.");
+          if (routes.salsac.status !== ROUTE_STATUS.NO) routes.salsac.why.push("Bundling preference is unclear.");
+        } else if (bundled === "yes") {
+          // Do not claim bundling exists; just mark that some routes commonly offer a “single payroll/contract” feel
+          if (routes.buy.status === ROUTE_STATUS.OK) routes.buy.status = ROUTE_STATUS.PAUSE;
+          routes.buy.why.push("You prefer bundling; outright ownership usually means more separate line items to manage.");
+
+          if (routes.finance.status === ROUTE_STATUS.OK) routes.finance.status = ROUTE_STATUS.PAUSE;
+          routes.finance.why.push("You prefer bundling; finance routes often involve separate insurance/charging/maintenance choices.");
+
+          routes.lease.why.push("Bundling preference can align depending on how the agreement is structured.");
+
+          if (routes.salsac.status === ROUTE_STATUS.OK) routes.salsac.why.push("Bundling preference can align if the scheme covers multiple elements.");
+        } else {
+          // bundled === "no"
+          routes.buy.why.push("Bundling is not a requirement (based on your answer).");
+          routes.finance.why.push("Bundling is not a requirement (based on your answer).");
+          routes.lease.why.push("Bundling is not a requirement (based on your answer).");
+          if (routes.salsac.status !== ROUTE_STATUS.NO) routes.salsac.why.push("Bundling is not a requirement (based on your answer).");
+        }
+
+        // Cap bullet lists to keep UI clean and deterministic
+        for (const k of Object.keys(routes)) {
+          routes[k].why = routes[k].why.filter(Boolean).slice(0, 3);
+        }
+
+        return routes;
+      }
+
+      function overallOutcomeFromRoutes(routes) {
+        const statuses = Object.values(routes).map(r => r.status);
+        const anyPause = statuses.includes(ROUTE_STATUS.PAUSE);
+        const anyOk = statuses.includes(ROUTE_STATUS.OK);
+
+        if (!anyOk) return OUTCOMES.NOT_VIABLE_FOR_NOW;
+        if (anyPause) return OUTCOMES.PAUSE;
+        return OUTCOMES.VIABLE;
+      }
+
+      function outcomeCopy(overall, routes) {
+        if (overall.key === OUTCOMES.NOT_VIABLE_FOR_NOW.key) {
+          return {
+            meta: overall,
+            title: "Not viable (for now) — no compatible routes based on the constraints given",
+            why: [
+              "All routes look either unavailable or structurally mismatched based on your answers.",
+              "This does not mean an EV is impossible; it means the current route set does not fit cleanly without changes or checks."
+            ],
+            next: [
+              "If your constraints change (eligibility, flexibility needs, stability, horizon), rerun this gate.",
+              "If Salary Sacrifice availability is unknown, confirm it and rerun."
+            ],
+            warn: "Forcing a route that conflicts with constraints is a common regret driver."
+          };
+        }
+
+        if (overall.key === OUTCOMES.PAUSE.key) {
+          return {
+            meta: overall,
+            title: "Pause — one or more routes require a check before they can be treated as compatible",
+            why: [
+              "At least one key input is unknown or creates a fragile commitment.",
+              "This gate is conservative by design: it prefers pausing over assuming terms will work out."
+            ],
+            next: [
+              "Confirm any “Pause to check” items (eligibility, early-exit terms, scheme constraints).",
+              "Then rerun and only compare routes that remain compatible."
+            ],
+            warn: ""
+          };
+        }
+
+        // VIABLE
+        return {
+          meta: overall,
+          title: "Viable — you have one or more compatible routes to compare",
+          why: [
+            "At least one route looks structurally compatible based on your answers.",
+            "This does not rank routes; it narrows the field to options that match your stated constraints."
+          ],
+          next: [
+            "Compare only the routes marked “Potentially compatible”.",
+            "Keep the decision separate from the car choice: confirm route constraints first, then shop the car."
+          ],
+          warn: "If your constraints change (eligibility, flexibility needs, horizon), rerun this gate."
+        };
+      }
+
+      function renderResultShell({ meta, title, why, next, warn }) {
+        elResultBox.innerHTML = `
+          <div class="tag">${escapeHtml(meta.label)}</div>
+          <h2>${escapeHtml(title)}</h2>
+
+          <strong>Why:</strong>
+          <ul>${(why || []).map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+
+          <div class="divider"></div>
+
+          <strong>What to do next:</strong>
+          <ul>${(next || []).map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+
+          ${warn ? `
+            <div class="divider"></div>
+            <strong>Watch out:</strong>
+            <ul><li>${escapeHtml(warn)}</li></ul>
+          ` : ""}
+
+          <p class="note">Decision support only — not advice.</p>
+        `;
+
+        elResultCard.style.display = "block";
+        elResultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+
+      function renderRoutes(routes) {
+        elRoutesBox.innerHTML = [
+          routeCard(routes.buy.name, routes.buy.status, routes.buy.why),
+          routeCard(routes.finance.name, routes.finance.status, routes.finance.why),
+          routeCard(routes.lease.name, routes.lease.status, routes.lease.why),
+          routeCard(routes.salsac.name, routes.salsac.status, routes.salsac.why)
+        ].join("");
+      }
+
+      function showResultFromInputs() {
+        const inputs = {
+          salSac: elSal.value,
+          earlyExit: elExit.value,
+          incomeStability: elIncome.value,
+          horizon: elHorizon.value,
+          bundled: elBundled.value
+        };
+
+        const routes = evaluateRoutes(inputs);
+        const overall = overallOutcomeFromRoutes(routes);
+        const copy = outcomeCopy(overall, routes);
+
+        // Summaries (in-memory only)
+        elSumSal.textContent = labelSal(inputs.salSac);
+        elSumExit.textContent = labelExit(inputs.earlyExit);
+        elSumIncome.textContent = labelIncome(inputs.incomeStability);
+        elSumHorizon.textContent = labelHorizon(inputs.horizon);
+        elSumBundled.textContent = labelBundled(inputs.bundled);
+
+        // Track overall outcome for analytics
+        setOutcomePath(copy.meta.slug);
+
+        // Hide form, show results
+        elFormCard.style.display = "none";
+        renderResultShell(copy);
+        renderRoutes(routes);
+      }
+
+      function outcomeShellForDirectLoad(meta) {
+        // Fixed copy for direct-load outcome URLs (no stored inputs)
+        if (meta.key === OUTCOMES.VIABLE.key) {
+          return {
+            meta,
+            title: "Viable — you have at least one route worth comparing",
+            why: [
+              "This outcome means the route filter can produce at least one compatible path when run with answers.",
+              "Outcome URLs are used for analytics; this page does not store your inputs."
+            ],
+            next: [
+              "Run the gate to generate a compatibility view based on your constraints.",
+              "Compare only routes marked “Potentially compatible”."
+            ],
+            warn: ""
+          };
+        }
+        if (meta.key === OUTCOMES.NOT_VIABLE_FOR_NOW.key) {
+          return {
+            meta,
+            title: "Not viable (for now) — the current route set may not fit cleanly",
+            why: [
+              "This outcome means the gate can conclude all routes are unavailable or mismatched depending on inputs.",
+              "Outcome URLs are used for analytics; this page does not store your inputs."
+            ],
+            next: [
+              "Run the gate to see which constraints are blocking routes.",
+              "If eligibility or constraints change, rerun."
+            ],
+            warn: ""
+          };
+        }
+        return {
+          meta,
+          title: "Pause — one or two checks matter before comparing routes",
+          why: [
+            "This outcome means at least one key input is unknown or creates a fragile commitment.",
+            "Outcome URLs are used for analytics; this page does not store your inputs."
+          ],
+          next: [
+            "Run the gate to generate a compatibility view based on your constraints.",
+            "Confirm the “Pause to check” items, then rerun."
+          ],
+          warn: ""
+        };
+      }
+
+      function showResultFromOutcomePath(meta) {
+        // No stored answers => em-dash summaries and no route matrix (would be misleading)
+        elSumSal.textContent = "—";
+        elSumExit.textContent = "—";
+        elSumIncome.textContent = "—";
+        elSumHorizon.textContent = "—";
+        elSumBundled.textContent = "—";
+
+        elRoutesBox.innerHTML = routeCard("Route compatibility", ROUTE_STATUS.PAUSE, [
+          "Run the gate to generate route compatibility based on your answers.",
+          "This page does not store or reconstruct inputs from URLs."
+        ]);
+
+        elFormCard.style.display = "none";
+        renderResultShell(outcomeShellForDirectLoad(meta));
+      }
+
+      function resetAll() {
+        setBasePath();
+        elFormCard.style.display = "block";
+        elResultCard.style.display = "none";
+        elResultBox.innerHTML = "";
+        elRoutesBox.innerHTML = "";
+
+        elSumSal.textContent = "—";
+        elSumExit.textContent = "—";
+        elSumIncome.textContent = "—";
+        elSumHorizon.textContent = "—";
+        elSumBundled.textContent = "—";
+      }
+
+      elBtn.addEventListener("click", showResultFromInputs);
+      elStartOver.addEventListener("click", resetAll);
+
+      // Init
+      const initialMeta = parseOutcomeFromPath();
+      if (initialMeta) {
+        showResultFromOutcomePath(initialMeta);
+      } else {
+        setBasePath();
+      }
+    })();
+  
+</script>
+</body>
+</html>

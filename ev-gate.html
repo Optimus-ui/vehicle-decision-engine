@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EV Viability Gate</title>
+  <meta name="description" content="A conservative, rule-based check for whether an EV is viable and non-disruptive for your situation. Deterministic. No cookies. Not advice." />
+
+  <!-- Google-safe: canonical always points to base; outcome paths are noindex -->
+  <link id="canonicalLink" rel="canonical" href="/ev-gate/" />
+  <meta id="robotsMeta" name="robots" content="index,follow" />
+
+  <style>
+:root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+
+.linkish{color:inherit}
+</style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>EV Viability Gate</h1>
+        <p class="sub">
+          A conservative, deterministic check on whether an EV looks <b>viable and non-disruptive</b> for your situation.
+          No model recommendations. No finance advice. Same inputs → one outcome.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Deterministic rules</div>
+        <div class="pill">Conservative bias</div>
+        <div class="pill">No “you should”</div>
+        <div class="pill">Outcome tracking</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card" id="formCard">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p>Answer each question as written. If you’re unsure, pick the more cautious option.</p>
+          </div>
+          <div class="tag">Not run</div>
+        </div>
+        <div class="bd">
+          <form class="form" id="gateForm">
+            <div class="section">
+              <h3>Charging access</h3>
+              <p>This gate is mostly about routine friction. Charging being “possible” isn’t the same as it being solved.</p>
+              <p class="tip"><b>Tip:</b> “Confirmed” means permissions + practical setup are genuinely solved.</p>
+            </div>
+
+            <label>
+              Home charging status
+              <select id="home_status">
+                <option value="confirmed">Installed / confirmed feasible</option>
+                <option value="unconfirmed">Possible but not confirmed</option>
+                <option value="not_possible">Not possible</option>
+              </select>
+            </label>
+
+            <label>
+              Work charging reliability (if no home charging)
+              <select id="work_status">
+                <option value="reliable">Yes, reliable</option>
+                <option value="no">No</option>
+                <option value="not_sure">Not sure</option>
+              </select>
+            </label>
+
+            <label>
+              Public charging plan (if no home/work charging)
+              <select id="public_plan">
+                <option value="yes">Yes — known location + fits routine</option>
+                <option value="maybe">Maybe — not tested / uncertain</option>
+                <option value="no">No — would be disruptive</option>
+              </select>
+            </label>
+
+            <div class="section">
+              <h3>Usage pattern</h3>
+              <p>Higher mileage and frequent long trips increase dependence on reliable charging access.</p>
+            </div>
+
+            <label>
+              Typical weekly mileage
+              <select id="weekly_miles">
+                <option value="low">Under ~150 miles/week</option>
+                <option value="mid">~150–300 miles/week</option>
+                <option value="high">Over ~300 miles/week</option>
+              </select>
+            </label>
+
+            <label>
+              Long trips (200+ miles) how often?
+              <select id="long_trips">
+                <option value="rare">Rare (a few times/year)</option>
+                <option value="monthly">Monthly-ish</option>
+                <option value="weekly">Weekly</option>
+              </select>
+            </label>
+          </form>
+
+          <div class="btnrow">
+            <button class="primary" id="btn" type="button">Get my outcome</button>
+          </div>
+
+          <div class="note">
+            This gate checks charging viability and routine friction. It does not recommend a car or a finance method.
+          </div>
+        </div>
+      </section>
+
+      <!-- OUTPUT -->
+      <section class="card" id="resultCard" style="display:none;" aria-live="polite">
+        <div class="hd">
+          <div>
+            <h2>Outcome</h2>
+            <p>Clear result, with plain-English why + next steps.</p>
+          </div>
+          <div class="tag"><span class="linkish" id="startOver" style="cursor:pointer; text-decoration:underline; text-underline-offset:3px;">Start over</span></div>
+        </div>
+        <div class="bd">
+          <div id="resultBox" class="outcome"></div>
+
+          <div class="audit" style="margin-top:12px;">
+            <details>
+              <summary>Your answers (not stored)</summary>
+              <div class="auditgrid" id="summaryKV">
+                <div class="kv"><b>Home charging status</b><br><span id="sumHome">—</span></div>
+                <div class="kv"><b>Work charging reliability</b><br><span id="sumWork">—</span></div>
+                <div class="kv"><b>Public charging plan</b><br><span id="sumPublic">—</span></div>
+                <div class="kv"><b>Weekly mileage</b><br><span id="sumMiles">—</span></div>
+                <div class="kv"><b>Long trips</b><br><span id="sumTrips">—</span></div>
+              </div>
+            </details>
+          </div>
+
+          <div class="footer">
+            <div class="small">This page does not store answers. If you loaded an outcome URL directly, the outcome copy is shown without reconstructing inputs.</div>
+            <div class="small">Decision support only — not advice. Verify access, permissions, and charging options before committing.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+
+  (function () {
+    const BASE_PATH = "/ev-gate/";
+    const OUTCOME_PATH = "/ev-gate/outcome/";
+
+    // ---------------------------
+    // Google-safe indexing directives
+    // ---------------------------
+    function applyIndexingDirectives() {
+      const canonicalEl = document.getElementById("canonicalLink");
+      const robotsEl = document.getElementById("robotsMeta");
+
+      const path = window.location.pathname || "";
+      const isOutcomePath = path.startsWith(OUTCOME_PATH);
+
+      if (canonicalEl) canonicalEl.setAttribute("href", BASE_PATH);
+      if (robotsEl) robotsEl.setAttribute("content", isOutcomePath ? "noindex,follow" : "index,follow");
+    }
+    applyIndexingDirectives();
+
+    // ---------------------------
+    // Locked outcome set
+    // ---------------------------
+    const OUTCOMES = {
+      VIABLE: { key: "VIABLE", slug: "viable", label: "VIABLE" },
+      PAUSE: { key: "PAUSE", slug: "pause", label: "PAUSE" },
+      NOT_VIABLE_FOR_NOW: { key: "NOT_VIABLE_FOR_NOW", slug: "not-viable-for-now", label: "NOT VIABLE (FOR NOW)" }
+    };
+
+    // ---------------------------
+    // DOM (strict)
+    // ---------------------------
+    const elHome = document.getElementById("home_status");
+    const elWork = document.getElementById("work_status");
+    const elPublic = document.getElementById("public_plan");
+    const elMiles = document.getElementById("weekly_miles");
+    const elTrips = document.getElementById("long_trips");
+
+    const elBtn = document.getElementById("btn");
+    const elFormCard = document.getElementById("formCard");
+    const elResultCard = document.getElementById("resultCard");
+    const elResultBox = document.getElementById("resultBox");
+    const elStartOver = document.getElementById("startOver");
+
+    const elSumHome = document.getElementById("sumHome");
+    const elSumWork = document.getElementById("sumWork");
+    const elSumPublic = document.getElementById("sumPublic");
+    const elSumMiles = document.getElementById("sumMiles");
+    const elSumTrips = document.getElementById("sumTrips");
+
+    function requireEls(pairs) {
+      const missing = pairs.filter(([_, el]) => !el).map(([name]) => name);
+      if (missing.length) {
+        console.error("EV Gate: missing required elements:", missing.join(", "));
+        return false;
+      }
+      return true;
+    }
+
+    const ok = requireEls([
+      ["home_status", elHome],
+      ["work_status", elWork],
+      ["public_plan", elPublic],
+      ["weekly_miles", elMiles],
+      ["long_trips", elTrips],
+      ["btn", elBtn],
+      ["formCard", elFormCard],
+      ["resultCard", elResultCard],
+      ["resultBox", elResultBox],
+      ["startOver", elStartOver],
+      ["sumHome", elSumHome],
+      ["sumWork", elSumWork],
+      ["sumPublic", elSumPublic],
+      ["sumMiles", elSumMiles],
+      ["sumTrips", elSumTrips]
+    ]);
+    if (!ok) return;
+
+    // ---------------------------
+    // Helpers
+    // ---------------------------
+    function escapeHtml(str) {
+      return String(str)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function setOutcomePath(slug) {
+      const safe = String(slug || OUTCOMES.PAUSE.slug).toLowerCase().replace(/[^a-z0-9-]/g, "");
+      history.replaceState({ outcome: safe }, "", OUTCOME_PATH + safe);
+    }
+
+    function setBasePath() {
+      history.replaceState({}, "", BASE_PATH);
+    }
+
+    function parseOutcomeFromPath() {
+      const p = window.location.pathname || "";
+      const idx = p.indexOf(OUTCOME_PATH);
+      if (idx === -1) return null;
+      const slug = p.slice(idx + OUTCOME_PATH.length).split("/")[0].toLowerCase();
+      return Object.values(OUTCOMES).find(o => o.slug === slug) || null;
+    }
+
+    function labelHome(v) {
+      if (v === "confirmed") return "Installed / confirmed feasible";
+      if (v === "unconfirmed") return "Possible but not confirmed";
+      if (v === "not_possible") return "Not possible";
+      return "—";
+    }
+    function labelWork(v) {
+      if (v === "reliable") return "Yes, reliable";
+      if (v === "no") return "No";
+      if (v === "not_sure") return "Not sure";
+      return "—";
+    }
+    function labelPublic(v) {
+      if (v === "yes") return "Yes — known location + fits routine";
+      if (v === "maybe") return "Maybe — not tested / uncertain";
+      if (v === "no") return "No — would be disruptive";
+      return "—";
+    }
+    function labelMiles(v) {
+      if (v === "low") return "Under ~150 miles/week";
+      if (v === "mid") return "~150–300 miles/week";
+      if (v === "high") return "Over ~300 miles/week";
+      return "—";
+    }
+    function labelTrips(v) {
+      if (v === "rare") return "Rare (a few times/year)";
+      if (v === "monthly") return "Monthly-ish";
+      if (v === "weekly") return "Weekly";
+      return "—";
+    }
+
+    // ---------------------------
+    // Deterministic rules (5-question model)
+    // ---------------------------
+    function recommendEVGate({ home, work, publicPlan, miles, trips }) {
+      // Q1: home unconfirmed => PAUSE (hard gate)
+      if (home === "unconfirmed") {
+        return {
+          outcome: OUTCOMES.PAUSE,
+          title: "Pause — home charging is not confirmed",
+          why: [
+            "Home charging is the biggest single friction reducer for EV ownership.",
+            "If feasibility is unconfirmed, it’s easy to assume a routine that won’t exist in practice."
+          ],
+          next: [
+            "Confirm permissions and the practical setup (not just “in theory”).",
+            "If home charging is not possible, rerun using the work/public path."
+          ],
+          warn: "Plans that rely on “it should be fine” often fail under real-life time pressure."
+        };
+      }
+
+      // Home confirmed => generally viable (with conservative note for demanding use)
+      if (home === "confirmed") {
+        if (trips === "weekly" && miles === "high") {
+          return {
+            outcome: OUTCOMES.VIABLE,
+            title: "Viable — home charging helps, but your usage pattern is demanding",
+            why: [
+              "Confirmed home charging removes most day-to-day charging friction.",
+              "High weekly mileage plus weekly long trips increases reliance on rapid charging and planning."
+            ],
+            next: [
+              "Stress-test one real long-trip route you do and see if the plan feels workable.",
+              "If home charging access changes, rerun the gate."
+            ],
+            warn: "When usage is demanding, small plan gaps show up more often."
+          };
+        }
+
+        return {
+          outcome: OUTCOMES.VIABLE,
+          title: "Viable — home charging is a strong foundation",
+          why: [
+            "Confirmed home charging usually makes EV ownership non-disruptive day-to-day.",
+            "Your remaining charging needs are more likely to be occasional rather than routine."
+          ],
+          next: [
+            "Validate the practical routine once (access, cable reach, day-to-day convenience).",
+            "Keep the next step separate: only look at funding after viability is confirmed."
+          ],
+          warn: "If home charging access changes later, rerun this gate."
+        };
+      }
+
+      // From here: home not possible => rely on work or public
+      if (work === "not_sure") {
+        return {
+          outcome: OUTCOMES.PAUSE,
+          title: "Pause — work charging reliability is unknown",
+          why: [
+            "Without home charging, reliable work charging can make an EV viable.",
+            "If it’s uncertain, you may end up defaulting to public charging without intending to."
+          ],
+          next: [
+            "Confirm availability, access rules, and whether it’s dependable day-to-day.",
+            "Then rerun."
+          ],
+          warn: ""
+        };
+      }
+
+      const hasWork = (work === "reliable");
+      const dependsPublic = !hasWork;
+
+      if (hasWork) {
+        if (miles === "high" && trips === "weekly") {
+          return {
+            outcome: OUTCOMES.PAUSE,
+            title: "Pause — work charging may be viable, but your usage pattern is demanding",
+            why: [
+              "Work charging can cover day-to-day needs, but high mileage plus weekly long trips increases dependence on rapid charging.",
+              "If work charging availability changes, the routine can become disruptive quickly."
+            ],
+            next: [
+              "Stress-test one typical week and one long trip using your real charging locations.",
+              "If the plan feels tight, treat that as a reason to wait rather than force it."
+            ],
+            warn: ""
+          };
+        }
+
+        return {
+          outcome: OUTCOMES.VIABLE,
+          title: "Viable — work charging can cover day-to-day needs",
+          why: [
+            "Without home charging, reliable work charging is the next-best foundation.",
+            "It reduces how often public charging becomes a routine chore."
+          ],
+          next: [
+            "Confirm the practical reality (access rules, dependability).",
+            "If work charging access changes later, rerun this gate."
+          ],
+          warn: ""
+        };
+      }
+
+      // No home + no work => public is default routine
+      if (publicPlan === "maybe") {
+        return {
+          outcome: OUTCOMES.PAUSE,
+          title: "Pause — public charging plan is untested or uncertain",
+          why: [
+            "If you don’t have home or work charging, public charging becomes the default routine.",
+            "If the plan isn’t tested, it’s hard to predict whether it will be tolerable week-to-week."
+          ],
+          next: [
+            "Identify one realistic location and time window you’d use regularly.",
+            "If it still feels disruptive after a reality check, treat that as a meaningful signal."
+          ],
+          warn: ""
+        };
+      }
+
+      if (dependsPublic && publicPlan === "no") {
+        return {
+          outcome: OUTCOMES.NOT_VIABLE_FOR_NOW,
+          title: "Not viable (for now) — public charging would become a forced routine",
+          why: [
+            "You don’t have home or reliable work charging, so public charging becomes the default.",
+            "You indicated public charging would be disruptive."
+          ],
+          next: [
+            "If circumstances change (home/work charging access), rerun the gate.",
+            "If still exploring EVs, only proceed after confirming a routine you’d genuinely tolerate."
+          ],
+          warn: "When charging becomes a mandatory errand, regret risk rises sharply."
+        };
+      }
+
+      return {
+        outcome: OUTCOMES.VIABLE,
+        title: "Viable — the charging routine is likely workable",
+        why: [
+          "Your answers do not indicate a structural charging blocker.",
+          "The main risk is whether charging access remains reliable over time."
+        ],
+        next: [
+          "Stress-test one typical week so you know it fits your routine.",
+          "If viable, the next step can be to filter funding routes (separate decision)."
+        ],
+        warn: "If charging access changes later, rerun this gate."
+      };
+    }
+
+    // ---------------------------
+    // Next step block (only on VIABLE)
+    // ---------------------------
+    function nextStepBlock(outcomeKey) {
+      if (outcomeKey !== OUTCOMES.VIABLE.key) return "";
+      return `
+        <div class="divider"></div>
+        <div class="tag">Next step (optional)</div>
+        <p class="small" style="margin-top:8px;">
+          If charging viability looks workable, you can now filter which funding routes are structurally compatible (Buy / Finance / Lease / Salary Sacrifice).
+          This does not rank options or tell you what to choose.
+        </p>
+        <p style="margin-top:10px;">
+          <a href="/ev-funding-route/">Open EV Funding Route Gate</a>
+        </p>
+      `;
+    }
+
+    // ---------------------------
+    // Rendering
+    // ---------------------------
+    function renderResult({ outcome, title, why, next, warn }) {
+      // Update analytics URL
+      setOutcomePath(outcome.slug);
+
+      // Show result UI
+      elFormCard.style.display = "none";
+      elResultCard.style.display = "block";
+
+      elResultBox.innerHTML = `
+        <div class="tag">${escapeHtml(outcome.label)}</div>
+        <h2>${escapeHtml(title)}</h2>
+
+        <strong>Why:</strong>
+        <ul>${(why || []).map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+
+        <div class="divider"></div>
+
+        <strong>What to do next:</strong>
+        <ul>${(next || []).map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>
+
+        ${warn ? `
+          <div class="divider"></div>
+          <strong>Watch out:</strong>
+          <ul><li>${escapeHtml(warn)}</li></ul>
+        ` : ""}
+
+        ${nextStepBlock(outcome.key)}
+
+        <p class="note">Decision support only — not advice.</p>
+      `;
+
+      elResultCard.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderOutcomeShell(meta) {
+      // For direct-load outcome URLs we do NOT reconstruct inputs
+      const shell =
+        meta.key === OUTCOMES.VIABLE.key ? {
+          outcome: meta,
+          title: "Viable — charging can be workable depending on inputs",
+          why: [
+            "Outcome URLs are used for analytics; this page does not store inputs.",
+            "Run the gate to see the full Why + Next steps for your answers."
+          ],
+          next: ["Use the form above, then review the output."],
+          warn: ""
+        } :
+        meta.key === OUTCOMES.NOT_VIABLE_FOR_NOW.key ? {
+          outcome: meta,
+          title: "Not viable (for now) — charging can become structurally disruptive",
+          why: [
+            "Outcome URLs are used for analytics; this page does not store inputs.",
+            "Run the gate to see the full Why + Next steps for your answers."
+          ],
+          next: ["Use the form above, then review the output."],
+          warn: ""
+        } : {
+          outcome: meta,
+          title: "Pause — one or two checks matter before moving on",
+          why: [
+            "Outcome URLs are used for analytics; this page does not store inputs.",
+            "Run the gate to see the full Why + Next steps for your answers."
+          ],
+          next: ["Use the form above, then review the output."],
+          warn: ""
+        };
+
+      // Show shell without lying about answers
+      elSumHome.textContent = "—";
+      elSumWork.textContent = "—";
+      elSumPublic.textContent = "—";
+      elSumMiles.textContent = "—";
+      elSumTrips.textContent = "—";
+
+      renderResult(shell);
+    }
+
+    function resetAll() {
+      setBasePath();
+      elFormCard.style.display = "block";
+      elResultCard.style.display = "none";
+      elResultBox.innerHTML = "";
+
+      elSumHome.textContent = "—";
+      elSumWork.textContent = "—";
+      elSumPublic.textContent = "—";
+      elSumMiles.textContent = "—";
+      elSumTrips.textContent = "—";
+    }
+
+    // ---------------------------
+    // Events
+    // ---------------------------
+    elBtn.addEventListener("click", () => {
+      const inputs = {
+        home: elHome.value,
+        work: elWork.value,
+        publicPlan: elPublic.value,
+        miles: elMiles.value,
+        trips: elTrips.value
+      };
+
+      // Summaries (in-memory only)
+      elSumHome.textContent = labelHome(inputs.home);
+      elSumWork.textContent = labelWork(inputs.work);
+      elSumPublic.textContent = labelPublic(inputs.publicPlan);
+      elSumMiles.textContent = labelMiles(inputs.miles);
+      elSumTrips.textContent = labelTrips(inputs.trips);
+
+      const out = recommendEVGate(inputs);
+      renderResult(out);
+    });
+
+    elStartOver.addEventListener("click", resetAll);
+
+    // ---------------------------
+    // Init
+    // ---------------------------
+    const initialMeta = parseOutcomeFromPath();
+    if (initialMeta) {
+      renderOutcomeShell(initialMeta);
+    } else {
+      setBasePath();
+    }
+  })();
+
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /new-car-gate/outcome/
+Disallow: /ev-gate/outcome/
+Disallow: /ev-funding-route/outcome/
+Disallow: /pcp-decision/outcome/
+Disallow: /balloon-decision/outcome/

@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>New Car Gate — Appropriateness Check</title>
+  <meta name="description" content="A conservative, deterministic check on whether buying a new car is appropriate right now. No sales pressure." />
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --text:#e8eefc;
+      --muted:#b6c2e6;
+      --line:rgba(232,238,252,.12);
+      --good:rgba(120,255,190,.12);
+      --warn:rgba(255,225,130,.12);
+      --bad:rgba(255,130,155,.12);
+      --chip:rgba(232,238,252,.08);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius:18px;
+      --radius2:14px;
+      --max:980px;
+      --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--font);
+      color:var(--text);
+      background:radial-gradient(1000px 600px at 20% 0%, rgba(120,150,255,.18), transparent 60%),
+                 radial-gradient(900px 700px at 90% 10%, rgba(255,120,210,.12), transparent 60%),
+                 linear-gradient(180deg, var(--bg), #070b14 65%, #060911);
+      min-height:100vh;
+    }
+    a{color:inherit}
+    .wrap{max-width:var(--max); margin:0 auto; padding:28px 18px 60px}
+    .top{display:flex; gap:14px; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+    .title{display:flex; flex-direction:column; gap:6px;}
+    h1{margin:0; font-size:28px; letter-spacing:-.02em; line-height:1.15;}
+    .sub{margin:0; color:var(--muted); max-width:62ch; line-height:1.45; font-size:14px;}
+    .pillrow{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;}
+    .pill{background:var(--chip); border:1px solid var(--line); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted); user-select:none; white-space:nowrap;}
+
+    .grid{display:grid; grid-template-columns: 1.1fr .9fr; gap:16px; margin-top:16px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr} .pillrow{justify-content:flex-start} }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:16px 16px 12px;
+      border-bottom:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.03), transparent);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .card .hd h2{margin:0; font-size:16px; letter-spacing:-.01em;}
+    .card .hd p{margin:6px 0 0; color:var(--muted); font-size:13px; line-height:1.4;}
+    .card .bd{padding:14px 16px 16px}
+
+    .form{display:grid; grid-template-columns: 1fr 1fr; gap:12px;}
+    @media (max-width: 720px){ .form{grid-template-columns:1fr} }
+
+    .section{
+      grid-column: 1 / -1;
+      border:1px solid var(--line);
+      border-radius:16px;
+      background:rgba(0,0,0,.10);
+      padding:12px 12px 10px;
+      margin-top:2px;
+    }
+    .section h3{margin:0 0 6px; font-size:13px; letter-spacing:.02em; text-transform:uppercase; color:var(--muted);}
+    .section p{margin:0; font-size:12px; line-height:1.45; color:var(--muted);}
+    .section .tip{margin-top:8px; padding-top:8px; border-top:1px dashed rgba(232,238,252,.14); color:rgba(232,238,252,.82);}
+
+    label{display:flex; flex-direction:column; gap:6px; font-size:12px; color:var(--muted);}
+    select{
+      width:100%;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      padding:10px 10px;
+      outline:none;
+      font-size:14px;
+    }
+    select:focus{border-color:rgba(180,200,255,.35)}
+    .btnrow{margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;}
+    button{border:none; border-radius:14px; padding:10px 12px; cursor:pointer; font-weight:650; letter-spacing:-.01em; font-size:14px;}
+    .primary{background:rgba(255,255,255,.92); color:#0b1220;}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--line);}
+    .note{margin-top:10px; font-size:12px; color:var(--muted); line-height:1.4;}
+
+    .outcome{display:flex; flex-direction:column; gap:12px;}
+    .banner{border-radius:var(--radius); border:1px solid var(--line); padding:14px 14px 12px; background:rgba(255,255,255,.03);}
+    .banner.good{ background:var(--good); }
+    .banner.warn{ background:var(--warn); }
+    .banner.bad{ background:var(--bad); }
+    .banner .kicker{font-size:12px; color:var(--muted); margin:0 0 6px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+    .tag{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:4px 10px; border-radius:999px;
+      background:rgba(0,0,0,.18); border:1px solid var(--line);
+      font-size:12px; color:var(--muted); user-select:none;
+    }
+    .banner h3{margin:0; font-size:20px; letter-spacing:-.02em;}
+    .why, .next{border:1px solid var(--line); border-radius:var(--radius2); background:rgba(0,0,0,.12); padding:12px 12px 10px;}
+    .why h4, .next h4{margin:0 0 8px; font-size:13px; color:var(--muted); letter-spacing:.02em; text-transform:uppercase;}
+    ul{margin:0; padding-left:18px; color:var(--text); line-height:1.5; font-size:14px;}
+    .small{color:var(--muted); font-size:12px; line-height:1.45;}
+
+    .links{margin-top:10px; display:flex; flex-direction:column; gap:8px;}
+    .linkitem{
+      display:flex; justify-content:space-between; gap:10px;
+      padding:10px 10px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      text-decoration:none;
+    }
+    .linkitem:hover{border-color:rgba(200,210,255,.28)}
+    .linkitem .l{display:flex; flex-direction:column; gap:2px; min-width:0;}
+    .linkitem .t{font-size:14px; font-weight:650; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linkitem .d{font-size:12px; color:var(--muted); line-height:1.35;}
+    .aff{font-size:11px; color:var(--muted); opacity:.9;}
+
+    .audit{margin-top:12px; border-top:1px solid var(--line); padding-top:12px;}
+    details{border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:rgba(0,0,0,.10);}
+    summary{cursor:pointer; font-weight:650; font-size:13px;}
+    .auditgrid{margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:10px;}
+    @media (max-width: 720px){ .auditgrid{grid-template-columns:1fr} }
+    .kv{border:1px solid var(--line); border-radius:12px; padding:10px; background:rgba(255,255,255,.03); font-size:12px; color:var(--muted); line-height:1.35;}
+    .kv b{color:var(--text); font-weight:650}
+    .footer{margin-top:14px; color:var(--muted); font-size:12px; line-height:1.45;}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1>New Car Gate</h1>
+        <p class="sub">
+          A conservative, deterministic check on whether buying a <b>new</b> car looks appropriate right now.
+          No model suggestions. No urgency. Your inputs → one outcome.
+        </p>
+      </div>
+      <div class="pillrow">
+        <div class="pill">Deterministic rules</div>
+        <div class="pill">Conservative bias</div>
+        <div class="pill">No “you should”</div>
+        <div class="pill">Outcome tracking</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- INPUTS -->
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Inputs</h2>
+            <p>Answer each question as written. If you’re unsure, pick the more cautious option.</p>
+          </div>
+          <div class="tag" id="statusTag">Not run</div>
+        </div>
+        <div class="bd">
+          <form class="form" id="gateForm">
+
+            <div class="section">
+              <h3>Plan and usage</h3>
+              <p>These set baseline context (time horizon and how much you rely on a car).</p>
+              <p class="tip"><b>Tip:</b> Some questions below are about your <b>current</b> car, others about what you’d value <b>if you replaced it</b>. Answer each as written.</p>
+            </div>
+
+            <label>
+              Ownership horizon
+              <select id="ownership_horizon" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="lt3">&lt;3 years</option>
+                <option value="3to5">3–5 years</option>
+                <option value="5plus">5+ years</option>
+              </select>
+            </label>
+
+            <label>
+              Annual mileage
+              <select id="annual_mileage" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </label>
+
+            <label>
+              Vehicle criticality
+              <select id="vehicle_criticality" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="discretionary">Discretionary</option>
+                <option value="important">Important</option>
+                <option value="critical">Critical</option>
+              </select>
+            </label>
+
+            <label>
+              Income stability
+              <select id="income_stability" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="stable">Stable</option>
+                <option value="variable">Variable</option>
+                <option value="uncertain">Uncertain</option>
+              </select>
+            </label>
+
+            <label>
+              Emergency buffer
+              <select id="emergency_buffer" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+
+            <label>
+              High-interest debt
+              <select id="high_interest_debt" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </label>
+
+            <div class="section">
+              <h3>About your current car</h3>
+              <p>These questions are about the car you use now — not a new one.</p>
+            </div>
+
+            <label>
+              How reliable is your current car right now?
+              <select id="current_reliability" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="stable">Stable (no recurring issues)</option>
+                <option value="deteriorating">Deteriorating (minor or growing issues)</option>
+                <option value="unreliable">Unreliable (frequent or serious issues)</option>
+              </select>
+            </label>
+
+            <label>
+              Do you know what your current car is likely to cost to keep running in the next 12 months?
+              <select id="repair_uncertainty" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="known">Yes — roughly (checked recently or known jobs)</option>
+                <option value="unknown">No — not really (could vary a lot)</option>
+              </select>
+            </label>
+
+            <label>
+              If your current car were unexpectedly unavailable for a few days, how much of a problem would that be?
+              <select id="downtime_tolerance" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="low">Low tolerance (this would cause real disruption)</option>
+                <option value="high">High tolerance (I could cope)</option>
+              </select>
+            </label>
+
+            <div class="section">
+              <h3>About what you value going forward</h3>
+              <p>These questions are about your preferences if you replaced your car.</p>
+            </div>
+
+            <label>
+              If you replaced your car, how comfortable are you with being locked into a multi‑year commitment?
+              <select id="commitment_preference" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="flexible">Flexible (easy exit / low lock-in)</option>
+                <option value="fixed">Fixed (comfortable committing)</option>
+              </select>
+            </label>
+
+            <label>
+              How important would a manufacturer warranty be to you if you replaced your car?
+              <select id="warranty_importance" required>
+                <option value="" disabled selected>Select…</option>
+                <option value="low">Low (comfortable without one)</option>
+                <option value="high">High (I value predictability)</option>
+              </select>
+            </label>
+
+          </form>
+
+          <div class="btnrow">
+            <button class="primary" id="runBtn" type="button">Run the gate</button>
+            <button class="ghost" id="resetBtn" type="button">Reset</button>
+          </div>
+
+          <div class="note">
+            This tool is intentionally conservative. It does not consider prices, APR, monthly payments, brands, or deals.
+          </div>
+        </div>
+      </section>
+
+      <!-- OUTPUT -->
+      <section class="card">
+        <div class="hd">
+          <div>
+            <h2>Outcome</h2>
+            <p>Clear result, with plain-English why + next steps.</p>
+          </div>
+          <div class="tag" id="pathTag">/new-car-gate</div>
+        </div>
+        <div class="bd">
+          <div id="out" class="outcome">
+            <div class="banner">
+              <p class="kicker">
+                <span class="tag">Not run</span>
+                <span class="tag">No outcome URL yet</span>
+              </p>
+              <h3>Run the gate to see an outcome.</h3>
+            </div>
+
+            <div class="why">
+              <h4>Why</h4>
+              <ul>
+                <li>We’ll explain which rules fired, in plain English.</li>
+              </ul>
+            </div>
+
+            <div class="next">
+              <h4>Next steps</h4>
+              <ul>
+                <li>You’ll get non-salesy actions you can take (or ignore).</li>
+              </ul>
+            </div>
+
+            <div class="footer">
+              <div class="small">Some links below may be affiliate links. This doesn’t affect the outcome shown.</div>
+            </div>
+
+            <div class="audit">
+              <details>
+                <summary>Audit view (what fired)</summary>
+                <div class="auditgrid" id="auditGrid"></div>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+
+  const fields = [
+    "ownership_horizon","commitment_preference","annual_mileage","vehicle_criticality",
+    "income_stability","emergency_buffer","high_interest_debt","current_reliability",
+    "repair_uncertainty","downtime_tolerance","warranty_importance"
+  ];
+
+  function getInputs() {
+    const data = {};
+    for (const f of fields) data[f] = $(f).value;
+    return data;
+  }
+  function allAnswered(data) { return fields.every((f) => !!data[f]); }
+  function setStatus(text) { $("statusTag").textContent = text; }
+  function setPath(path) { $("pathTag").textContent = path; }
+
+  function slugifyOutcome(outcome) {
+    if (outcome === "NOT_APPROPRIATE") return "not-appropriate";
+    if (outcome === "PAUSE") return "pause";
+    if (outcome === "APPROPRIATE") return "appropriate";
+    return "unknown";
+  }
+
+  function replaceOutcomePath(slug) {
+    const base = "/new-car-gate";
+    const path = slug ? `${base}/outcome/${slug}` : base;
+    history.replaceState({}, "", path);
+    setPath(path);
+    return path;
+  }
+
+  // ----------------------------
+  // Decision Engine (single source of truth)
+  // ----------------------------
+  function evaluate(data) {
+    const fired = [];
+
+    // Layer 1 — Hard blocks
+    if (data.ownership_horizon === "lt3" && data.commitment_preference === "fixed") {
+      return {
+        outcome: "NOT_APPROPRIATE",
+        fired: [{ layer:"L1", ruleId:"L1_SHORT_FIXED", verdict:"NOT_APPROPRIATE",
+          reason:"Short horizon + fixed commitment increases downside without flexibility." }]
+      };
+    }
+    if (data.income_stability === "uncertain") {
+      return {
+        outcome: "NOT_APPROPRIATE",
+        fired: [{ layer:"L1", ruleId:"L1_INCOME_UNCERTAIN", verdict:"NOT_APPROPRIATE",
+          reason:"Uncertain income makes long commitments hard to justify conservatively." }]
+      };
+    }
+    if (data.emergency_buffer === "no" && data.income_stability !== "stable") {
+      return {
+        outcome: "NOT_APPROPRIATE",
+        fired: [{ layer:"L1", ruleId:"L1_NO_BUFFER_NOT_STABLE", verdict:"NOT_APPROPRIATE",
+          reason:"No buffer plus non-stable income is too fragile for a new-car commitment." }]
+      };
+    }
+    if (data.high_interest_debt === "yes" && data.emergency_buffer === "no") {
+      return {
+        outcome: "NOT_APPROPRIATE",
+        fired: [{ layer:"L1", ruleId:"L1_HIDEBT_NO_BUFFER", verdict:"NOT_APPROPRIATE",
+          reason:"High-interest debt + no buffer is a conservative stop signal." }]
+      };
+    }
+
+    // Layer 2 — Forced PAUSE (current car cost clarity)
+    if (data.repair_uncertainty === "unknown") {
+      fired.push({
+        layer:"L2", ruleId:"L2_COST_CLARITY_UNKNOWN", verdict:"PAUSE",
+        reason:"Near-term running costs for the current car are unclear; reduce uncertainty before deciding."
+      });
+      return { outcome: "PAUSE", fired };
+    }
+
+    // Layer 2 — Forced PAUSE (instability)
+    if (data.ownership_horizon === "lt3" && data.commitment_preference === "flexible" && data.income_stability !== "stable") {
+      fired.push({
+        layer:"L2", ruleId:"L2_SHORT_FLEX_NOT_STABLE", verdict:"PAUSE",
+        reason:"Short-term plans need stability; with non-stable income, pause until clearer."
+      });
+      return { outcome: "PAUSE", fired };
+    }
+    if (data.income_stability === "variable" && data.emergency_buffer === "no") {
+      fired.push({
+        layer:"L2", ruleId:"L2_VARIABLE_NO_BUFFER", verdict:"PAUSE",
+        reason:"Variable income with no buffer makes outcomes too sensitive to shocks."
+      });
+      return { outcome: "PAUSE", fired };
+    }
+    if (data.ownership_horizon === "3to5" && data.current_reliability === "stable") {
+      fired.push({
+        layer:"L2", ruleId:"L2_3TO5_STABLE_CAR", verdict:"PAUSE",
+        reason:"Medium horizon plus a stable current car is usually not enough to justify new."
+      });
+      return { outcome: "PAUSE", fired };
+    }
+
+    // Layer 3 — Anti-gaming brake
+    if (data.ownership_horizon === "lt3" && data.annual_mileage === "low" && data.vehicle_criticality !== "critical") {
+      fired.push({
+        layer:"L3", ruleId:"L3_SHORT_LOW_USE", verdict:"NOT_APPROPRIATE",
+        reason:"Short horizon + low usage + non-critical need looks like downside without functional benefit."
+      });
+      return { outcome: "NOT_APPROPRIATE", fired };
+    }
+
+    // Layer 4 — Justifications
+    let justifications = 0;
+    const just = (ruleId, reason) => {
+      justifications += 1;
+      fired.push({ layer:"L4", ruleId, verdict:"+1", reason });
+    };
+
+    if (data.ownership_horizon === "5plus") just("L4_5PLUS", "Long ownership increases chance you benefit from predictability over time.");
+    if (data.vehicle_criticality === "critical") just("L4_CRITICAL", "If the car is critical, predictability and uptime matter more.");
+
+    if (data.current_reliability === "unreliable") {
+      just("L4_UNRELIABLE", "An unreliable current car increases replacement pressure.");
+    }
+
+    // Make 'deteriorating' matter when downtime is a real issue
+    if (data.current_reliability === "deteriorating" && data.downtime_tolerance === "low") {
+      just("L4_DETERIORATING_LOW_DOWNTIME", "A deteriorating car plus low downtime tolerance increases replacement pressure.");
+    }
+
+    if (data.downtime_tolerance === "low") just("L4_LOW_DOWNTIME", "Low tolerance for downtime favours predictable ownership.");
+    if (data.warranty_importance === "high") just("L4_WARRANTY_HIGH", "High warranty importance favours the certainty new can offer.");
+
+    // Soft biases (recorded)
+    const biases = [];
+    if (data.annual_mileage === "low") biases.push("Low mileage reduces the practical upside of buying new.");
+    if (data.vehicle_criticality === "discretionary") biases.push("If it’s discretionary, the bar for ‘new’ should be higher.");
+    if (data.current_reliability === "stable") biases.push("A stable current car reduces urgency and justification.");
+    if (biases.length) fired.push({ layer:"L3", ruleId:"L3_BIASES", verdict:"bias", reason:biases.join(" ") });
+
+    // Layer 5 — Threshold (raised if <3 years)
+    const required = (data.ownership_horizon === "lt3") ? 4 : 3;
+    fired.push({
+      layer:"L5", ruleId:"L5_THRESHOLD", verdict:`need ${required}`,
+      reason:`Short horizons require a higher bar (${required}) to pass conservatively.`
+    });
+
+    if (justifications <= 1) {
+      fired.push({
+        layer:"L5", ruleId:"L5_LOW_JUST", verdict:"NOT_APPROPRIATE",
+        reason:"There isn’t enough functional justification to outweigh the downsides of buying new."
+      });
+      return { outcome: "NOT_APPROPRIATE", fired, justifications, required };
+    }
+
+    if (justifications >= required && data.income_stability === "stable" && data.emergency_buffer === "yes") {
+      fired.push({
+        layer:"L5", ruleId:"L5_PASS", verdict:"APPROPRIATE",
+        reason:"Your justifications clear the conservative bar, with stable income and a buffer."
+      });
+      return { outcome: "APPROPRIATE", fired, justifications, required };
+    }
+
+    fired.push({
+      layer:"L5", ruleId:"L5_MIDDLE", verdict:"PAUSE",
+      reason:"You have some justification, but not enough (or not stable/buffered enough) to be confident."
+    });
+    return { outcome: "PAUSE", fired, justifications, required };
+  }
+
+  // ----------------------------
+  // Rendering
+  // ----------------------------
+  function render(result, data) {
+    const outcome = result.outcome;
+    const slug = slugifyOutcome(outcome);
+    replaceOutcomePath(slug);
+    setStatus(`Outcome: ${outcome.replace("_"," ")}`);
+
+    const bannerClass = (outcome === "APPROPRIATE") ? "good" : (outcome === "PAUSE") ? "warn" : "bad";
+    const label = (outcome === "APPROPRIATE") ? "Appropriate" : (outcome === "PAUSE") ? "Pause" : "Not appropriate";
+
+    const whyItems = [];
+    const nextItems = [];
+
+    if (outcome === "NOT_APPROPRIATE") {
+      whyItems.push("Buying new doesn’t appear to add enough functional benefit to justify the downside right now.");
+      whyItems.push("This is a conservative result: it prioritises flexibility, stability, and avoiding unnecessary commitment.");
+      nextItems.push("If you still need a change, compare used or nearly-new options first (lower downside).");
+      nextItems.push("If the current car is stable, set a review point (e.g., after a change in mileage, reliability, or horizon).");
+      nextItems.push("If reliability is the concern, reduce uncertainty: get a clear diagnosis / estimate before deciding.");
+    } else if (outcome === "PAUSE") {
+      whyItems.push("There are unresolved variables that make a new-car decision hard to judge cleanly right now.");
+      whyItems.push("Pausing avoids locking in a commitment while your situation is still sensitive to change.");
+      nextItems.push("Reduce uncertainty first (e.g., clarify current-car running costs, usage, or stability).");
+      nextItems.push("Define your ownership horizon: the result shifts materially between <3, 3–5, and 5+ years.");
+      nextItems.push("If you need a vehicle soon, compare used/nearly-new alongside new to keep downside contained.");
+    } else {
+      whyItems.push("Your inputs indicate the predictability of buying new may outweigh the downsides in your case.");
+      whyItems.push("This is not a recommendation to purchase — only that ‘new’ looks defensible given your constraints.");
+      nextItems.push("Write down non-negotiables (uptime needs, warranty needs, horizon) before looking at specific cars.");
+      nextItems.push("Compare ‘new’ vs ‘nearly-new’ to check whether you’re paying for meaningful predictability.");
+      nextItems.push("If you’re considering changing vehicle type, run EV Gate as a separate viability check.");
+    }
+
+    let linksHtml = "";
+    if (outcome === "APPROPRIATE") {
+      linksHtml = `
+        <div class="links" aria-label="Optional links">
+          <a class="linkitem" href="#" rel="nofollow noopener" target="_blank">
+            <div class="l">
+              <div class="t">Browse new-car listings across brands<span class="aff"> *</span></div>
+              <div class="d">Optional: a neutral place to compare availability without choosing a brand first.</div>
+            </div>
+            <div class="tag">Optional</div>
+          </a>
+          <a class="linkitem" href="#" rel="nofollow noopener" target="_blank">
+            <div class="l">
+              <div class="t">New vs nearly-new explainer</div>
+              <div class="d">Optional: understand what you’re paying for when you buy new.</div>
+            </div>
+            <div class="tag">Neutral</div>
+          </a>
+          <a class="linkitem" href="/ev-gate" rel="noopener">
+            <div class="l">
+              <div class="t">Run EV Gate</div>
+              <div class="d">Optional: check whether an EV fits your situation (separate tool).</div>
+            </div>
+            <div class="tag">Internal</div>
+          </a>
+        </div>
+        <div class="footer">
+          <div class="small">Some links marked * may be affiliate links. This doesn’t affect the outcome shown.</div>
+        </div>
+      `;
+    } else {
+      linksHtml = `
+        <div class="footer">
+          <div class="small">Some links below may be affiliate links. This doesn’t affect the outcome shown.</div>
+        </div>
+      `;
+    }
+
+    const labelMap = {
+      ownership_horizon:"Ownership horizon",
+      annual_mileage:"Annual mileage",
+      vehicle_criticality:"Vehicle criticality",
+      income_stability:"Income stability",
+      emergency_buffer:"Emergency buffer",
+      high_interest_debt:"High-interest debt",
+      current_reliability:"Current car reliability",
+      repair_uncertainty:"12‑month cost clarity (current car)",
+      downtime_tolerance:"Downtime tolerance (current car)",
+      commitment_preference:"Commitment preference (going forward)",
+      warranty_importance:"Warranty importance (going forward)"
+    };
+
+    const firedText = result.fired.map(r => `${r.layer} • ${r.ruleId}: ${r.verdict} — ${r.reason}`);
+
+    $("out").innerHTML = `
+      <div class="banner ${bannerClass}">
+        <p class="kicker">
+          <span class="tag">Outcome</span>
+          <span class="tag">${label}</span>
+          <span class="tag">${slug}</span>
+        </p>
+        <h3>${label}</h3>
+      </div>
+
+      <div class="why">
+        <h4>Why</h4>
+        <ul>${whyItems.map(li => `<li>${escapeHtml(li)}</li>`).join("")}</ul>
+      </div>
+
+      <div class="next">
+        <h4>Next steps</h4>
+        <ul>${nextItems.map(li => `<li>${escapeHtml(li)}</li>`).join("")}</ul>
+        ${linksHtml}
+      </div>
+
+      <div class="audit">
+        <details>
+          <summary>Audit view (what fired)</summary>
+          <div class="auditgrid" id="auditGrid"></div>
+        </details>
+      </div>
+    `;
+
+    const auditGrid = $("auditGrid");
+    const auditPairs = fields.map(f => ({ k: labelMap[f] || f, v: data[f] }));
+
+    auditGrid.innerHTML = "";
+    for (const p of auditPairs) {
+      const div = document.createElement("div");
+      div.className = "kv";
+      div.innerHTML = `<b>${escapeHtml(p.k)}</b><br>${escapeHtml(p.v)}`;
+      auditGrid.appendChild(div);
+    }
+    const divRules = document.createElement("div");
+    divRules.className = "kv";
+    divRules.style.gridColumn = "1 / -1";
+    divRules.innerHTML = `<b>Rules fired</b><br>${escapeHtml(firedText.join("\n")).replaceAll("\n","<br>")}`;
+    auditGrid.appendChild(divRules);
+  }
+
+  function escapeHtml(s){
+    return String(s)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // ----------------------------
+  // Wiring
+  // ----------------------------
+  $("runBtn").addEventListener("click", () => {
+    const data = getInputs();
+    if (!allAnswered(data)) {
+      setStatus("Missing answers");
+      alert("Please answer every field (use the closest option).");
+      return;
+    }
+    const result = evaluate(data);
+    render(result, data);
+  });
+
+  $("resetBtn").addEventListener("click", () => {
+    for (const f of fields) $(f).selectedIndex = 0;
+    setStatus("Not run");
+    replaceOutcomePath("");
+    $("out").innerHTML = `
+      <div class="banner">
+        <p class="kicker">
+          <span class="tag">Not run</span>
+          <span class="tag">No outcome URL yet</span>
+        </p>
+        <h3>Run the gate to see an outcome.</h3>
+      </div>
+
+      <div class="why">
+        <h4>Why</h4>
+        <ul><li>We’ll explain which rules fired, in plain English.</li></ul>
+      </div>
+
+      <div class="next">
+        <h4>Next steps</h4>
+        <ul><li>You’ll get non-salesy actions you can take (or ignore).</li></ul>
+      </div>
+
+      <div class="footer">
+        <div class="small">Some links below may be affiliate links. This doesn’t affect the outcome shown.</div>
+      </div>
+
+      <div class="audit">
+        <details>
+          <summary>Audit view (what fired)</summary>
+          <div class="auditgrid" id="auditGrid"></div>
+        </details>
+      </div>
+    `;
+  });
+
+  setPath(location.pathname || "/new-car-gate");
+})();
+</script>
+</body>
+</html>
