@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EV Gate</title>
+
+  <style>
+    :root {
+      --bg: #f6f5f2;
+      --card: #ffffff;
+      --text: #1f2933;
+      --muted: #6b7280;
+      --border: #e5e7eb;
+      --accent: #111827;
+      --soft: #f3f4f6;
+      --good: #166534;
+      --warn: #92400e;
+      --bad: #991b1b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 720px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px;
+      box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+    }
+
+    .eyebrow {
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.05;
+      margin: 0 0 18px;
+      letter-spacing: -0.04em;
+    }
+
+    h2 {
+      font-size: clamp(24px, 4vw, 34px);
+      line-height: 1.15;
+      margin: 0 0 12px;
+      letter-spacing: -0.03em;
+    }
+
+    p {
+      color: var(--muted);
+      margin: 0 0 24px;
+      font-size: 17px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 24px 0 32px;
+    }
+
+    .tag {
+      padding: 8px 12px;
+      background: var(--soft);
+      border-radius: 999px;
+      font-size: 14px;
+      color: #374151;
+    }
+
+    .options {
+      display: grid;
+      gap: 12px;
+      margin-top: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+
+    .option {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      text-align: left;
+      padding: 16px 18px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: 0.15s ease;
+    }
+
+    .option:hover {
+      border-color: #9ca3af;
+      background: #fafafa;
+    }
+
+    .option.selected {
+      border-color: var(--accent);
+      background: #f9fafb;
+      box-shadow: inset 0 0 0 1px var(--accent);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 30px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 13px 20px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .secondary {
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .primary:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    .progress {
+      height: 8px;
+      background: var(--soft);
+      border-radius: 999px;
+      overflow: hidden;
+      margin-bottom: 28px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+      transition: width 0.25s ease;
+    }
+
+    .result-label {
+      display: inline-block;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 14px;
+      margin-bottom: 18px;
+      background: var(--soft);
+      color: var(--text);
+    }
+
+    .result-label.good {
+      background: #dcfce7;
+      color: var(--good);
+    }
+
+    .result-label.warn {
+      background: #fef3c7;
+      color: var(--warn);
+    }
+
+    .result-label.bad {
+      background: #fee2e2;
+      color: var(--bad);
+    }
+
+    .result-box {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 18px;
+      margin: 18px 0;
+    }
+
+    .result-box h3 {
+      margin: 0 0 8px;
+      font-size: 17px;
+    }
+
+    .result-box p {
+      margin: 0;
+      font-size: 15px;
+    }
+
+    @media (max-width: 560px) {
+      .card {
+        padding: 24px;
+      }
+
+      .actions {
+        flex-direction: column-reverse;
+      }
+
+      button {
+        width: 100%;
+      }
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 20px;
+      font-size: 14px;
+    }
+
+    footer a {
+      margin: 0 10px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      color: var(--accent);
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <section class="card" id="app"></section>
+  </main>
+
+  <footer>
+    <a href="about.html">About</a>
+    <a href="methodology.html">Methodology</a>
+    <a href="privacy.html">Privacy</a>
+  </footer>
+  <script>
+    const questions = [
+      {
+        id: "chargingAssessment",
+        title: "How would you realistically expect to charge the vehicle most of the time?",
+        support: "This helps assess whether your likely charging behaviour fits nearby infrastructure and routine.",
+        answers: [
+          { label: "Mainly at home", score: 3, friction: 0 },
+          { label: "Mainly at work", score: 2, friction: 0 },
+          { label: "Mostly public chargers nearby", score: -1, friction: 2 },
+          { label: "Mostly rapid charging when needed", score: -2, friction: 3 },
+          { label: "I’m not sure yet", score: 0, friction: 1, uncertainty: 1 }
+        ]
+      },
+      {
+        id: "drivingPattern",
+        title: "On a typical week, how much driving would the vehicle usually do?",
+        support: "This helps assess how often charging may realistically be required.",
+        answers: [
+          { label: "Mostly short local trips", score: 3, friction: 0 },
+          { label: "Regular commuting and errands", score: 2, friction: 0 },
+          { label: "Frequent long-distance driving", score: -1, friction: 2 },
+          { label: "High mileage most weeks", score: -2, friction: 3 },
+          { label: "It varies significantly week to week", score: -1, friction: 2 },
+          { label: "Unsure", score: 0, friction: 1, uncertainty: 1 }
+        ]
+      },
+      {
+        id: "routinePredictability",
+        title: "How predictable is your typical weekly driving routine?",
+        support: "This helps assess how easily charging could fit around your normal usage.",
+        answers: [
+          { label: "Very predictable week to week", score: 3, friction: 0 },
+          { label: "Mostly predictable with occasional longer trips", score: 2, friction: 0 },
+          { label: "Changes regularly week to week", score: -1, friction: 2 },
+          { label: "Frequently unpredictable or last-minute", score: -2, friction: 3 },
+          { label: "Unsure", score: 0, friction: 1, uncertainty: 1 }
+        ]
+      },
+      {
+        id: "chargingTolerance",
+        title: "How would you feel about occasionally planning journeys or stops around charging availability?",
+        support: "Some EV ownership setups may involve occasional reliance on public charging infrastructure.",
+        answers: [
+          { label: "Completely fine with it", score: 3, friction: 0 },
+          { label: "Mostly fine if needed occasionally", score: 2, friction: 0 },
+          { label: "Neutral / not sure", score: 0, friction: 1, uncertainty: 1 },
+          { label: "Would prefer not to", score: -1, friction: 2 },
+          { label: "Would find that frustrating", score: -3, friction: 3 }
+        ]
+      },
+      {
+        id: "backupFlexibility",
+        title: "Would the EV likely be your only regularly available vehicle?",
+        support: "This helps assess how flexible your transport setup would be if charging became inconvenient.",
+        answers: [
+          { label: "Yes", score: 3, friction: 0 },
+          { label: "Mostly yes", score: 2, friction: 0 },
+          { label: "No", score: -1, friction: 2 },
+          { label: "There would usually be another option available", score: -2, friction: 3 },
+          { label: "Unsure", score: 0, friction: 1, uncertainty: 1 }
+        ]
+      },
+      {
+        id: "expectation",
+        title: "What would you expect EV ownership to feel like day to day?",
+        support: "This helps check whether expectations match the likely ownership experience.",
+        answers: [
+          { label: "Simple, predictable, and mostly charged at home", score: 3, friction: 0 },
+          { label: "A small adjustment, but manageable", score: 2, friction: 0 },
+          { label: "Similar to petrol or diesel convenience", score: -1, friction: 2 },
+          { label: "I’m mainly interested but unsure what to expect", score: 0, friction: 1, uncertainty: 1 },
+          { label: "I would not want to think about charging much", score: -2, friction: 3 }
+        ]
+      }
+    ];
+
+    let currentQuestion = 0;
+    let answers = {};
+
+    const app = document.getElementById("app");
+
+    function renderStart() {
+      app.innerHTML = `
+        <div class="eyebrow">EV Gate</div>
+        <h1>Find out whether an EV realistically fits your routine.</h1>
+        <p>A short, conservative viability check based on charging access, driving pattern, routine, and ownership friction.</p>
+
+        <div class="meta">
+          <span class="tag">6 questions</span>
+          <span class="tag">No email required</span>
+          <span class="tag">No finance advice</span>
+          <span class="tag">Deterministic logic</span>
+        </div>
+
+        <button class="primary" onclick="renderQuestion()">Start assessment</button>
+      `;
+    }
+
+    function renderQuestion() {
+      const q = questions[currentQuestion];
+      const selected = answers[q.id];
+
+      app.innerHTML = `
+        <div class="progress">
+          <div class="progress-bar" style="width:0%"></div>
+        </div>
+
+        <div class="eyebrow">Question ${currentQuestion + 1} of ${questions.length}</div>
+        <h2>${q.title}</h2>
+        <p>${q.support}</p>
+
+        <div class="options">
+          ${q.answers.map((answer, index) => `
+            <button 
+              class="option ${selected === index ? "selected" : ""}" 
+              onclick="selectAnswer(${index})">
+              ${answer.label}
+            </button>
+          `).join("")}
+        </div>
+
+        <div class="actions">
+          <button class="secondary" onclick="goBack()">
+            ${currentQuestion === 0 ? "Back to start" : "Back"}
+          </button>
+
+          <button class="primary" onclick="goNext()" ${selected === undefined ? "disabled" : ""}>
+            ${currentQuestion === questions.length - 1 ? "See result" : "Continue"}
+          </button>
+        </div>
+      `;
+
+      // Set progress bar width after rendering
+      const progressBar = app.querySelector('.progress-bar');
+      progressBar.style.width = `${((currentQuestion) / questions.length) * 100}%`;
+    }
+
+    function selectAnswer(index) {
+      const q = questions[currentQuestion];
+      answers[q.id] = index;
+      renderQuestion();
+    }
+
+    function goBack() {
+      if (currentQuestion === 0) {
+        renderStart();
+      } else {
+        currentQuestion--;
+        renderQuestion();
+      }
+    }
+
+    function goNext() {
+      if (currentQuestion < questions.length - 1) {
+        currentQuestion++;
+        renderQuestion();
+      } else {
+        renderResult();
+      }
+    }
+
+    function calculateResult() {
+      let score = 0;
+      let friction = 0;
+      let uncertainty = 0;
+
+      questions.forEach(q => {
+        const selectedIndex = answers[q.id];
+        const selectedAnswer = q.answers[selectedIndex];
+
+        score += selectedAnswer.score || 0;
+        friction += selectedAnswer.friction || 0;
+        uncertainty += selectedAnswer.uncertainty || 0;
+      });
+
+      if (uncertainty >= 3) {
+        return {
+          type: "Insufficient information",
+          tone: "",
+          heading: "There is not enough certainty to give a strong viability result.",
+          why: "Several answers indicate uncertainty. That does not mean an EV is unsuitable, but it does mean the practical setup needs more checking first.",
+          next: "Clarify likely charging behaviour, weekly mileage, and whether public or rapid charging would be needed regularly."
+        };
+      }
+
+      if (score >= 12 && friction <= 4) {
+        return {
+          type: "Likely viable",
+          tone: "good",
+          heading: "An EV appears operationally viable for your current routine.",
+          why: "Your answers suggest manageable charging access, suitable usage patterns, and limited day-to-day friction.",
+          next: "Check real-world range, charging installation options, insurance, and total running costs before making a decision."
+        };
+      }
+
+      if (score >= 5 && friction <= 9) {
+        return {
+          type: "Viable with tradeoffs",
+          tone: "warn",
+          heading: "An EV may work, but there are practical tradeoffs to consider.",
+          why: "Your setup has some positive viability signals, but charging access, usage pattern, or routine flexibility may create occasional friction.",
+          next: "Focus on charging access, realistic weekly usage, and whether occasional public charging would be acceptable."
+        };
+      }
+
+      return {
+        type: "Currently high friction",
+        tone: "bad",
+        heading: "An EV may create significant practical friction in your current setup.",
+        why: "Your answers suggest higher reliance on public charging, lower routine predictability, or limited flexibility if charging becomes inconvenient.",
+        next: "Before going further, check whether reliable home, workplace, or local charging access could realistically improve the setup."
+      };
+    }
+
+    function renderResult() {
+      const result = calculateResult();
+
+      app.innerHTML = `
+        <div class="result-label ${result.tone}">${result.type}</div>
+        <h1>${result.heading}</h1>
+        <p>This is not a recommendation to buy or avoid an EV. It is a practical viability check based on your answers.</p>
+
+        <div class="result-box">
+          <h3>Why this result?</h3>
+          <p>${result.why}</p>
+        </div>
+
+        <div class="result-box">
+          <h3>What to check next</h3>
+          <p>${result.next}</p>
+        </div>
+
+        <div class="actions">
+          <button class="secondary" onclick="restart()">Start again</button>
+        </div>
+      `;
+    }
+
+    function restart() {
+      currentQuestion = 0;
+      answers = {};
+      renderStart();
+    }
+
+    renderStart();
+  </script>
+</body>
+</html>
